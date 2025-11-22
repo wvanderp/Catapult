@@ -33,7 +33,7 @@ jobs:
 
 
     - name: git add
-      run: git add dist && git commit -m "Initial build subtree commit"
+      run: git add -f dist && git commit -m "Initial build subtree commit"
 
     - name: git push
       run: |
