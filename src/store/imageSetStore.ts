@@ -1,5 +1,6 @@
-import {create} from 'zustand';
-import {createJSONStorage, persist} from 'zustand/middleware';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { indexedDBStorage } from '../utils/indexedDBStorage';
 
 interface Image {
     /*
@@ -9,24 +10,30 @@ interface Image {
     name: string;
     mimeType: string;
     /*
-     The metadata keys for the image for template substitution
+     * The metadata keys for the image for template substitution
     */
     keys: Record<string, string>;
 }
 
-interface ImageSet{
+interface ImageSet {
     /*
-     The template string for the images with triple curly brace variables
+    * The title template for the image set with triple curly brace variables
+    */
+    titleTemplate: string;
+
+    /*
+     * The template string for the images with triple curly brace variables
     */
     template: string;
     /*
-     The images in the set, keyed by a unique ID
+     * The images in the set, keyed by a unique ID
     */
     images: Record<string, Image>;
 }
 
 interface StateStore {
     imageSet: ImageSet;
+    setTitleTemplate: (titleTemplate: string) => void;
     setTemplate: (template: string) => void;
     addImage: (image: Image) => void;
     updateImageKeys: (imageId: string, keys: Record<string, string>) => void;
@@ -37,8 +44,16 @@ export const useImageSetStore = create<StateStore>()(
         (set) => ({
             imageSet: {
                 template: '',
+                titleTemplate: '',
                 images: {},
             },
+            setTitleTemplate: (titleTemplate: string) =>
+                set((state) => ({
+                    imageSet: {
+                        ...state.imageSet,
+                        titleTemplate,
+                    },
+                })),
             setTemplate: (template: string) =>
                 set((state) => ({
                     imageSet: {
@@ -75,7 +90,7 @@ export const useImageSetStore = create<StateStore>()(
         }),
         {
             name: 'image-set-storage',
-            storage: createJSONStorage(() => localStorage)
+            storage: createJSONStorage(() => indexedDBStorage)
         }
     )
 );

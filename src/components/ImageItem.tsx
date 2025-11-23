@@ -3,15 +3,16 @@ import { useImageSetStore } from '../store/imageSetStore';
 import { extractTemplateKeys } from '../utils/templateUtils';
 
 interface ImageItemProps {
-  id: string;
+    id: string;
 }
 
 export function ImageItem({ id }: ImageItemProps) {
     const image = useImageSetStore((state) => state.imageSet.images[id]);
     const template = useImageSetStore((state) => state.imageSet.template);
+    const titleTemplate = useImageSetStore((state) => state.imageSet.titleTemplate);
     const updateImageKeys = useImageSetStore((state) => state.updateImageKeys);
 
-    const keys = useMemo(() => extractTemplateKeys(template), [template]);
+    const keys = useMemo(() => extractTemplateKeys(titleTemplate + ' ' + template), [titleTemplate, template]);
     const [imageUrl, setImageUrl] = useState<string>('');
 
     useEffect(() => {
