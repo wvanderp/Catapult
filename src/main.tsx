@@ -4,6 +4,7 @@ import './index.css'
 import { RouterProvider, createRouter, createRootRoute, createRoute } from '@tanstack/react-router'
 import { Root } from './routes/Root'
 import { Index } from './routes/Index'
+import { AuthCallback } from './routes/AuthCallback'
 
 const rootRoute = createRootRoute({
   component: Root,
@@ -15,7 +16,13 @@ const indexRoute = createRoute({
   component: Index,
 })
 
-const routeTree = rootRoute.addChildren([indexRoute])
+const authCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/callback',
+  component: AuthCallback,
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, authCallbackRoute])
 
 const router = createRouter({
   routeTree,
