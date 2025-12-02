@@ -1,15 +1,19 @@
-import { TemplateInput } from '../components/TemplateInput'
-import { ImageUploader } from '../components/ImageUploader'
-import { ImageList } from '../components/ImageList'
-import TitleTemplateInput from '../components/TitleTemplateInput'
+import { useImageSetStore } from '../store/imageSetStore';
+import { TabNavigation } from '../components/TabNavigation';
+import { UploadTab, VariablesTab, FillOutTab, ReviewTab } from '../components/tabs';
 
 export function Index() {
+  const currentTab = useImageSetStore((state) => state.currentTab);
+
   return (
-    <main className="max-w-5xl mx-auto p-6 space-y-8">
-      <TemplateInput />
-      <TitleTemplateInput />
-      <ImageUploader />
-      <ImageList />
-    </main>
-  )
+    <>
+      <TabNavigation />
+      <main className="max-w-5xl mx-auto px-6 pb-12">
+        {currentTab === 'upload' && <UploadTab />}
+        {currentTab === 'variables' && <VariablesTab />}
+        {currentTab === 'fillout' && <FillOutTab />}
+        {currentTab === 'review' && <ReviewTab />}
+      </main>
+    </>
+  );
 }
