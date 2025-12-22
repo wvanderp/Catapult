@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { indexedDBStorage } from '../utils/indexedDBStorage';
+import { indexedDBStorage } from '../utils/indexedDbStorage';
 
 export interface Image {
     /*
@@ -39,11 +39,7 @@ interface ImageSet {
     images: Record<string, Image>;
 }
 
-export type TabId = 'upload' | 'variables' | 'fillout' | 'review';
-
 interface StateStore {
-    currentTab: TabId;
-    setCurrentTab: (tab: TabId) => void;
     imageSet: ImageSet;
     setTitleTemplate: (titleTemplate: string) => void;
     setTemplate: (template: string) => void;
@@ -58,8 +54,6 @@ interface StateStore {
 export const useImageSetStore = create<StateStore>()(
     persist(
         (set) => ({
-            currentTab: 'upload' as TabId,
-            setCurrentTab: (tab: TabId) => set({ currentTab: tab }),
             imageSet: {
                 template: `=={{int:filedesc}}==
 {{Information
@@ -116,7 +110,8 @@ export const useImageSetStore = create<StateStore>()(
                 }),
             removeImage: (imageId: string) =>
                 set((state) => {
-                    const { [imageId]: _, ...rest } = state.imageSet.images;
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { [imageId]: _removed, ...rest } = state.imageSet.images;
                     return {
                         imageSet: {
                             ...state.imageSet,

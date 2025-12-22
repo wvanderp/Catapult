@@ -36,7 +36,7 @@ const API_URL = "https://commons.wikimedia.org/w/api.php";
           "[parseAndLogJWT] Invalid JWT format: expected 3 parts, got",
           parts.length
         );
-        return null;
+        return;
       }
 
       // Decode the payload (second part)
@@ -62,7 +62,7 @@ const API_URL = "https://commons.wikimedia.org/w/api.php";
       return decoded;
     } catch (error) {
       console.error("[parseAndLogJWT] Failed to parse JWT:", error);
-      return null;
+      return;
     }
   }
 
@@ -124,12 +124,12 @@ export function useWikimediaCommons() {
       );
 
       try {
-        const res = await axios.post(`${AUTH_BASE_URL}/access_token`, body, {
+        const response = await axios.post(`${AUTH_BASE_URL}/access_token`, body, {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
         });
 
-        if (res.status === 200) {
-          const data = res.data;
+        if (response.status === 200) {
+          const data = response.data;
           console.log("[getValidAccessToken] Token refresh successful", {
             access_token: data.access_token,
             refresh_token: data.refresh_token,
@@ -146,7 +146,7 @@ export function useWikimediaCommons() {
         } else {
           console.error(
             "[getValidAccessToken] Token refresh failed with status",
-            res.status
+            response.status
           );
         }
       } catch (error) {
@@ -158,7 +158,7 @@ export function useWikimediaCommons() {
       "[getValidAccessToken] No valid token available, clearing tokens"
     );
     clearTokens();
-    return null;
+    return;
   }
 
   async function fetchUserInfo(token: string) {
@@ -167,23 +167,24 @@ export function useWikimediaCommons() {
       console.log(
         "[fetchUserInfo] Attempting to fetch profile from OAuth2 resource endpoint"
       );
-      const profileRes = await axios.get(`${AUTH_BASE_URL}/resource/profile`, {
+      const profileResponse = await axios.get(`${AUTH_BASE_URL}/resource/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (profileRes.status === 200) {
-        const profile = profileRes.data;
+      if (profileResponse.status === 200) {
+        const profile = profileResponse.data;
         console.log("[fetchUserInfo] OAuth2 profile response:", profile);
-        const name =
-          typeof profile?.username === "string"
-            ? profile.username
-            : typeof profile?.user_name === "string"
-            ? profile.user_name
-            : typeof profile?.name === "string"
-            ? profile.name
-            : null;
+        
+        // Extract name from profile with fallbacks
+        function extractName(p: Record<string, unknown>): string | undefined {
+          if (typeof p?.username === "string") return p.username;
+          if (typeof p?.user_name === "string") return p.user_name;
+          if (typeof p?.name === "string") return p.name;
+          return;
+        }
+        const name = extractName(profile);
 
         if (name) {
           console.log(
@@ -196,7 +197,7 @@ export function useWikimediaCommons() {
       } else {
         console.log(
           "[fetchUserInfo] OAuth2 profile endpoint returned non-ok status:",
-          profileRes.status
+          profileResponse.status
         );
       }
 
@@ -238,27 +239,6 @@ export function useWikimediaCommons() {
     } catch (error) {
       console.error("[fetchUserInfo] Failed to fetch user info", error);
     }
-  }
-
-  async function login() {
-    const state = generateCodeVerifier(32);
-    const verifier = generateCodeVerifier();
-    const challenge = await generateCodeChallenge(verifier);
-
-    sessionStorage.setItem("wm_state", state);
-    sessionStorage.setItem("wm_verifier", verifier);
-
-    const parameters = new URLSearchParams({
-      client_id: CLIENT_ID,
-      response_type: "code",
-      redirect_uri: REDIRECT_URI,
-      scope: OAUTH_SCOPES,
-      state,
-      code_challenge: challenge,
-      code_challenge_method: "S256",
-    });
-
-    globalThis.location.href = `${AUTH_BASE_URL}/authorize?${parameters.toString()}`;
   }
 
   async function handleCallback() {
@@ -351,7 +331,7 @@ export function useWikimediaCommons() {
     const token = await getValidAccessToken();
     if (!token) {
       console.log("[checkAuth] No valid token, returning unauthenticated");
-      return { authenticated: false, username: null, rights: [], groups: [] };
+      return { authenticated: false, username: undefined, rights: [], groups: [] };
     }
 
     const parameters = new URLSearchParams({
@@ -359,7 +339,7 @@ export function useWikimediaCommons() {
       meta: "userinfo",
       uiprop: "groups|rights|blockinfo",
       format: "json",
-      origin: window.location.origin,
+      origin: globalThis.location.origin,
     });
 
     console.log("[checkAuth] Checking auth status with parameters:", {
@@ -369,13 +349,13 @@ export function useWikimediaCommons() {
       format: "json",
     });
 
-    const res = await axios.get(`${API_URL}?${parameters.toString()}`, {
+    const response = await axios.get(`${API_URL}?${parameters.toString()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    const data = res.data;
+    const data = response.data;
     console.log("[checkAuth] Response from Commons API:", data);
 
     const userinfo = data?.query?.userinfo;
@@ -383,7 +363,7 @@ export function useWikimediaCommons() {
     if (userinfo?.anon !== undefined) {
       return {
         authenticated: false,
-        username: userinfo?.name || null,
+        username: userinfo?.name,
         rights: [],
         groups: [],
       };
@@ -400,7 +380,7 @@ export function useWikimediaCommons() {
 
     return {
       authenticated: true,
-      username: userinfo?.name || null,
+      username: userinfo?.name,
       rights: userinfo?.rights || [],
       groups: userinfo?.groups || [],
       hasUploadRight,
@@ -486,7 +466,7 @@ export function useWikimediaCommons() {
     form.append("text", text); // Page content
     form.append("token", csrfToken);
 
-    console.log("[uploadFile] token: ", csrfToken);
+    console.log("[uploadFile] token:", csrfToken);
     console.log("[uploadFile] Uploading file with parameters:", url.toString(), JSON.stringify(form));
 
     // Only ignore warnings if explicitly requested (e.g., user confirmed to overwrite)
@@ -588,69 +568,6 @@ export function useWikimediaCommons() {
     };
   }
 
-  /**
-   * Parse MediaWiki upload warnings into a structured format
-   */
-  function parseWarnings(warnings: Record<string, unknown>): UploadWarning[] {
-    const result: UploadWarning[] = [];
-
-    for (const [key, value] of Object.entries(warnings)) {
-      switch (key) {
-        case "exists": {
-          result.push({
-            type: "exists",
-            message: `A file with this name already exists: ${value}`,
-          });
-          break;
-        }
-        case "duplicate": {
-          result.push({
-            type: "duplicate",
-            message: "This file is a duplicate of existing file(s)",
-            duplicateFiles: Array.isArray(value) ? value : [String(value)],
-          });
-          break;
-        }
-        case "duplicate-archive": {
-          result.push({
-            type: "duplicate-archive",
-            message: `This file was previously deleted: ${value}`,
-          });
-          break;
-        }
-        case "was-deleted": {
-          result.push({
-            type: "was-deleted",
-            message: `A file with this name was previously deleted: ${value}`,
-          });
-          break;
-        }
-        case "badfilename": {
-          result.push({
-            type: "badfilename",
-            message: `Bad filename: ${value}`,
-          });
-          break;
-        }
-        case "filetype-banned": {
-          result.push({
-            type: "filetype-banned",
-            message: `This file type is not allowed: ${value}`,
-          });
-          break;
-        }
-        default: {
-          result.push({
-            type: "unknown",
-            message: `${key}: ${JSON.stringify(value)}`,
-          });
-        }
-      }
-    }
-
-    return result;
-  }
-
   return {
     // Auth state
     accessToken,
@@ -667,4 +584,88 @@ export function useWikimediaCommons() {
     getCsrfToken,
     uploadFile,
   };
+}
+
+/**
+ * Parse MediaWiki upload warnings into a structured format
+ */
+function parseWarnings(warnings: Record<string, unknown>): UploadWarning[] {
+  const result: UploadWarning[] = [];
+
+  for (const [key, value] of Object.entries(warnings)) {
+    switch (key) {
+      case "exists": {
+        result.push({
+          type: "exists",
+          message: `A file with this name already exists: ${value}`,
+        });
+        break;
+      }
+      case "duplicate": {
+        result.push({
+          type: "duplicate",
+          message: "This file is a duplicate of existing file(s)",
+          duplicateFiles: Array.isArray(value) ? value : [String(value)],
+        });
+        break;
+      }
+      case "duplicate-archive": {
+        result.push({
+          type: "duplicate-archive",
+          message: `This file was previously deleted: ${value}`,
+        });
+        break;
+      }
+      case "was-deleted": {
+        result.push({
+          type: "was-deleted",
+          message: `A file with this name was previously deleted: ${value}`,
+        });
+        break;
+      }
+      case "badfilename": {
+        result.push({
+          type: "badfilename",
+          message: `Bad filename: ${value}`,
+        });
+        break;
+      }
+      case "filetype-banned": {
+        result.push({
+          type: "filetype-banned",
+          message: `This file type is not allowed: ${value}`,
+        });
+        break;
+      }
+      default: {
+        result.push({
+          type: "unknown",
+          message: `${key}: ${JSON.stringify(value)}`,
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+async function login() {
+  const state = generateCodeVerifier(32);
+  const verifier = generateCodeVerifier();
+  const challenge = await generateCodeChallenge(verifier);
+
+  sessionStorage.setItem("wm_state", state);
+  sessionStorage.setItem("wm_verifier", verifier);
+
+  const parameters = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: "code",
+    redirect_uri: REDIRECT_URI,
+    scope: OAUTH_SCOPES,
+    state,
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+  });
+
+  globalThis.location.href = `${AUTH_BASE_URL}/authorize?${parameters.toString()}`;
 }

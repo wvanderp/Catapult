@@ -1,15 +1,17 @@
-import { useImageSetStore, type TabId } from '../store/imageSetStore';
+import { Link, useLocation } from '@tanstack/react-router';
+import { useImageSetStore } from '../store/imageSetStore';
 
-const tabs: { id: TabId; label: string; description: string }[] = [
-  { id: 'upload', label: '1. Upload', description: 'Add images' },
-  { id: 'variables', label: '2. Variables', description: 'Set templates' },
-  { id: 'fillout', label: '3. Fill Out', description: 'Fill forms' },
-  { id: 'review', label: '4. Review', description: 'Upload to Commons' },
+type TabPath = '/upload' | '/variables' | '/fillout' | '/review';
+
+const tabs: { path: TabPath; label: string; description: string }[] = [
+  { path: '/upload', label: '1. Upload', description: 'Add images' },
+  { path: '/variables', label: '2. Variables', description: 'Set templates' },
+  { path: '/fillout', label: '3. Fill Out', description: 'Fill forms' },
+  { path: '/review', label: '4. Review', description: 'Upload to Commons' },
 ];
 
 export function TabNavigation() {
-  const currentTab = useImageSetStore((state) => state.currentTab);
-  const setCurrentTab = useImageSetStore((state) => state.setCurrentTab);
+  const location = useLocation();
   const images = useImageSetStore((state) => state.imageSet.images);
   
   const imageCount = Object.keys(images).length;
@@ -20,20 +22,20 @@ export function TabNavigation() {
       <div className="mx-auto max-w-5xl px-6">
         <div className="flex space-x-1">
           {tabs.map((tab) => {
-            const isActive = currentTab === tab.id;
+            const isActive = location.pathname === tab.path;
             
             // Show badge for certain tabs
-            let badge: string | null = null;
-            if (tab.id === 'upload' && imageCount > 0) {
+            let badge: string | undefined;
+            if (tab.path === '/upload' && imageCount > 0) {
               badge = `${imageCount}`;
-            } else if (tab.id === 'review' && imageCount > 0) {
+            } else if (tab.path === '/review' && imageCount > 0) {
               badge = `${reviewedCount}/${imageCount}`;
             }
 
             return (
-              <button
-                key={tab.id}
-                onClick={() => setCurrentTab(tab.id)}
+              <Link
+                key={tab.path}
+                to={tab.path}
                 className={`
                   relative px-4 py-3 text-sm font-medium transition-colors
                   ${isActive
@@ -53,7 +55,7 @@ export function TabNavigation() {
                     </span>
                   )}
                 </span>
-              </button>
+              </Link>
             );
           })}
         </div>

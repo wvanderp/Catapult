@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useImageSetStore, type Image } from '../../store/imageSetStore';
 
 import { useWikimediaCommons, type UploadWarning } from '../../hooks/useWikimediaCommons';
@@ -13,6 +14,34 @@ function applyTemplate(template: string, keys: Record<string, string>, globalVar
     return value !== undefined && value !== '' ? value : '<<<missing>>>';
   });
   return result;
+}
+
+type UploadStatus = 'pending' | 'uploading' | 'success' | 'error' | 'warning';
+
+function getProgressBarColor(errorCount: number, warningCount: number): string {
+  if (errorCount > 0) return 'bg-yellow-500';
+  if (warningCount > 0) return 'bg-orange-500';
+  return 'bg-green-500';
+}
+
+function getUploadStatusColor(status: UploadStatus): string {
+  switch (status) {
+    case 'pending': {
+      return 'bg-zinc-600 text-gray-300';
+    }
+    case 'uploading': {
+      return 'bg-blue-600 text-white';
+    }
+    case 'success': {
+      return 'bg-green-600 text-white';
+    }
+    case 'warning': {
+      return 'bg-orange-600 text-white';
+    }
+    case 'error': {
+      return 'bg-red-600 text-white';
+    }
+  }
 }
 
 interface ReviewItemProperties {
@@ -31,21 +60,21 @@ function ReviewItem({ image, title, description, onToggleReviewed }: ReviewItemP
   const hasUnfilledVariables = new RegExp(MISSING_PLACEHOLDER).test(title) || new RegExp(MISSING_PLACEHOLDER).test(description);
 
   // Highlight the missing placeholders in the title and description render output
-  const renderWithHighlights = (text: string) => {
+  function renderWithHighlights(text: string) {
     if (!text) return text;
     const parts = text.split(MISSING_PLACEHOLDER);
-    return parts.reduce((accumulator, part, index, array) => {
-      accumulator.push(part);
-      if (index < array.length - 1) {
-        accumulator.push(
+    return parts.flatMap((part, index) => {
+      const elements: (string | React.ReactNode)[] = [part];
+      if (index < parts.length - 1) {
+        elements.push(
           <span key={index} className="rounded bg-zinc-800 px-1 font-mono text-red-400">
             {MISSING_PLACEHOLDER}
           </span>,
         );
       }
-      return accumulator;
-    }, [] as (string | React.ReactNode)[]);
-  };
+      return elements;
+    });
+  }
 
   return (
     <div className={`overflow-hidden rounded-xl border-2 bg-zinc-800/50 transition-colors ${image.reviewed ? 'border-green-600' : (hasUnfilledVariables ? 'border-yellow-600' : 'border-transparent')
@@ -119,7 +148,7 @@ export function ReviewTab() {
   const globalVariables = useImageSetStore((state) => state.imageSet.globalVariables);
   const setImageReviewed = useImageSetStore((state) => state.setImageReviewed);
   const clearAllImages = useImageSetStore((state) => state.clearAllImages);
-  const setCurrentTab = useImageSetStore((state) => state.setCurrentTab);
+  const navigate = useNavigate();
 
   const { uploadFile, isAuthenticated } = useWikimediaCommons();
 
@@ -176,10 +205,9 @@ export function ReviewTab() {
       try {
         // Convert base64 to File
         const byteCharacters = atob(image.file);
-        const byteNumbers = new Array<number>(byteCharacters.length);
-        for (let index = 0; index < byteCharacters.length; index++) {
-          byteNumbers[index] = byteCharacters.charCodeAt(index);
-        }
+        const byteNumbers = Array.from({ length: byteCharacters.length }, (_, index) => 
+          byteCharacters.codePointAt(index) ?? 0
+        );
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: image.mimeType });
         const file = new File([blob], image.name, { type: image.mimeType });
@@ -231,7 +259,8 @@ export function ReviewTab() {
       if (result.success) {
         setUploadProgress((previous) => ({ ...previous, [id]: 'success' }));
         setUploadWarnings((previous) => {
-          const { [id]: _, ...rest } = previous;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [id]: _removed, ...rest } = previous;
           return rest;
         });
       } else {
@@ -248,7 +277,8 @@ export function ReviewTab() {
     setUploadProgress((previous) => ({ ...previous, [id]: 'error' }));
     setUploadErrors((previous) => ({ ...previous, [id]: 'Skipped due to warnings' }));
     setUploadWarnings((previous) => {
-      const { [id]: _, ...rest } = previous;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [id]: _removed, ...rest } = previous;
       return rest;
     });
   };
@@ -265,12 +295,12 @@ export function ReviewTab() {
         <div className="mb-4 text-5xl">📭</div>
         <h2 className="mb-2 text-xl font-medium text-white">No images to review</h2>
         <p className="mb-6 text-gray-400">Upload some images first.</p>
-        <button
-          onClick={() => setCurrentTab('upload')}
-          className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+        <Link
+          to="/upload"
+          className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
         >
           Go to Upload
-        </button>
+        </Link>
       </div>
     );
   }
@@ -324,8 +354,7 @@ export function ReviewTab() {
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-zinc-700">
             <div
-              className={`h-full transition-all duration-300 ${errorCount > 0 ? 'bg-yellow-500' : warningCount > 0 ? 'bg-orange-500' : 'bg-green-500'
-                }`}
+              className={`h-full transition-all duration-300 ${getProgressBarColor(errorCount, warningCount)}`}
               style={{ width: `${((successCount + errorCount) / Object.keys(uploadProgress).length) * 100}%` }}
             />
           </div>
@@ -343,7 +372,7 @@ export function ReviewTab() {
                 onClick={() => {
                   clearAllImages();
                   setUploadProgress({});
-                  setCurrentTab('upload');
+                  navigate({ to: '/upload' });
                 }}
                 className="rounded-lg bg-green-600 px-6 py-2 font-medium text-white transition-colors hover:bg-green-700"
               >
@@ -366,12 +395,7 @@ export function ReviewTab() {
             />
             {/* Upload status overlay */}
             {uploadProgress[id] && (
-              <div className={`absolute right-16 top-2 rounded px-2 py-1 text-xs font-medium ${uploadProgress[id] === 'pending' ? 'bg-zinc-600 text-gray-300' :
-                uploadProgress[id] === 'uploading' ? 'bg-blue-600 text-white' :
-                  uploadProgress[id] === 'success' ? 'bg-green-600 text-white' :
-                    uploadProgress[id] === 'warning' ? 'bg-orange-600 text-white' :
-                      'bg-red-600 text-white'
-                }`}>
+              <div className={`absolute right-16 top-2 rounded px-2 py-1 text-xs font-medium ${getUploadStatusColor(uploadProgress[id])}`}>
                 {uploadProgress[id] === 'pending' && 'Waiting...'}
                 {uploadProgress[id] === 'uploading' && 'Uploading...'}
                 {uploadProgress[id] === 'success' && '✓ Uploaded'}
@@ -415,12 +439,12 @@ export function ReviewTab() {
 
       {/* Navigation and upload button */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => setCurrentTab('fillout')}
+        <Link
+          to="/fillout"
           className="px-6 py-3 font-medium text-gray-400 transition-colors hover:text-white"
         >
           ← Back to Fill Out
-        </button>
+        </Link>
 
         <button
           onClick={handleUploadAll}

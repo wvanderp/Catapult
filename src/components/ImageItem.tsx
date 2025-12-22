@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useImageSetStore } from '../store/imageSetStore';
 import { extractTemplateKeys } from '../utils/templateUtils';
 
@@ -13,14 +13,9 @@ export function ImageItem({ id }: ImageItemProperties) {
     const updateImageKeys = useImageSetStore((state) => state.updateImageKeys);
 
     const keys = useMemo(() => extractTemplateKeys(titleTemplate + ' ' + template), [titleTemplate, template]);
-    const [imageUrl, setImageUrl] = useState<string>('');
-
-    useEffect(() => {
-        if (image?.file) {
-            const url = `data:${image.mimeType};base64,${image.file}`;
-            setImageUrl(url);
-        }
-    }, [image?.file, image?.mimeType]);
+    
+    // Compute imageUrl directly from the image data
+    const imageUrl = image?.file ? `data:${image.mimeType};base64,${image.file}` : '';
 
     const handleKeyChange = (key: string, value: string) => {
         updateImageKeys(id, {
@@ -29,7 +24,7 @@ export function ImageItem({ id }: ImageItemProperties) {
         });
     };
 
-    if (!image) return null;
+    if (!image) return;
 
     return (
         <div className="flex flex-col gap-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 p-6 md:flex-row">

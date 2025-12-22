@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useImageSetStore } from '../../store/imageSetStore';
 import { extractTemplateKeys } from '../../utils/templateUtils';
 
@@ -8,7 +9,6 @@ export function FillOutTab() {
   const titleTemplate = useImageSetStore((state) => state.imageSet.titleTemplate);
   const globalVariables = useImageSetStore((state) => state.imageSet.globalVariables);
   const updateImageKeys = useImageSetStore((state) => state.updateImageKeys);
-  const setCurrentTab = useImageSetStore((state) => state.setCurrentTab);
 
   const imageIds = Object.keys(images);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -24,12 +24,12 @@ export function FillOutTab() {
         <div className="mb-4 text-5xl">📭</div>
         <h2 className="mb-2 text-xl font-medium text-white">No images uploaded</h2>
         <p className="mb-6 text-gray-400">Upload some images first to fill out their details.</p>
-        <button
-          onClick={() => setCurrentTab('upload')}
-          className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+        <Link
+          to="/upload"
+          className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
         >
           Go to Upload
-        </button>
+        </Link>
       </div>
     );
   }
@@ -40,12 +40,12 @@ export function FillOutTab() {
         <div className="mb-4 text-5xl">📝</div>
         <h2 className="mb-2 text-xl font-medium text-white">No variables defined</h2>
         <p className="mb-6 text-gray-400">Add variables to your template first (e.g., {"{{{description}}}"}).</p>
-        <button
-          onClick={() => setCurrentTab('variables')}
-          className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+        <Link
+          to="/variables"
+          className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
         >
           Go to Variables
-        </button>
+        </Link>
       </div>
     );
   }
@@ -216,12 +216,12 @@ export function FillOutTab() {
               Next image →
             </button>
           ) : (
-            <button
-              onClick={() => setCurrentTab('review')}
+            <Link
+              to="/review"
               className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-700"
             >
               Go to Review ✓
-            </button>
+            </Link>
           )}
         </div>
       </div>

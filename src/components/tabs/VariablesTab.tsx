@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useImageSetStore } from '../../store/imageSetStore';
 import { extractTemplateKeys } from '../../utils/templateUtils';
 
@@ -9,7 +10,6 @@ export function VariablesTab() {
   const setTitleTemplate = useImageSetStore((state) => state.setTitleTemplate);
   const globalVariables = useImageSetStore((state) => state.imageSet.globalVariables);
   const setGlobalVariable = useImageSetStore((state) => state.setGlobalVariable);
-  const setCurrentTab = useImageSetStore((state) => state.setCurrentTab);
   const images = useImageSetStore((state) => state.imageSet.images);
 
   const imageCount = Object.keys(images).length;
@@ -128,19 +128,19 @@ export function VariablesTab() {
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <button
-          onClick={() => setCurrentTab('upload')}
+        <Link
+          to="/upload"
           className="px-6 py-3 font-medium text-gray-400 transition-colors hover:text-white"
         >
           ← Back to Upload
-        </button>
+        </Link>
         {imageCount > 0 && templateKeys.length > 0 && (
-          <button
-            onClick={() => setCurrentTab('fillout')}
+          <Link
+            to="/fillout"
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
           >
             Next: Fill out forms →
-          </button>
+          </Link>
         )}
       </div>
     </div>

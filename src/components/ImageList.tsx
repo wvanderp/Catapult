@@ -6,7 +6,7 @@ export function ImageList() {
   const imageIds = Object.keys(images);
 
   if (imageIds.length === 0) {
-    return null;
+    return;
   }
 
   return (

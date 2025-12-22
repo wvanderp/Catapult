@@ -5,7 +5,7 @@ import { useWikimediaCommons } from '../hooks/useWikimediaCommons';
 export function AuthCallback() {
   const { handleCallback } = useWikimediaCommons();
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
   const hasRun = useRef(false);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export function AuthCallback() {
 
     handleCallback()
       .then(() => {
-        navigate({ to: '/' });
+        navigate({ to: '/upload' });
       })
       .catch((error_) => {
         console.error(error_);

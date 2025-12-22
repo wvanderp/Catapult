@@ -1,11 +1,15 @@
 import React, { useRef } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useImageSetStore } from '../../store/imageSetStore';
+
+function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
+  event.preventDefault();
+}
 
 export function UploadTab() {
   const addImage = useImageSetStore((state) => state.addImage);
   const images = useImageSetStore((state) => state.imageSet.images);
   const removeImage = useImageSetStore((state) => state.removeImage);
-  const setCurrentTab = useImageSetStore((state) => state.setCurrentTab);
   const fileInputReference = useRef<HTMLInputElement>(null);
 
   const imageIds = Object.keys(images);
@@ -63,10 +67,6 @@ export function UploadTab() {
         }
       }
     }
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
   };
 
   return (
@@ -146,12 +146,12 @@ export function UploadTab() {
       {/* Next button */}
       {imageIds.length > 0 && (
         <div className="flex justify-end">
-          <button
-            onClick={() => setCurrentTab('variables')}
+          <Link
+            to="/variables"
             className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
           >
             Next: Set up templates →
-          </button>
+          </Link>
         </div>
       )}
     </div>

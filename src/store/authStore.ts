@@ -8,10 +8,10 @@ interface TokenSet {
 }
 
 interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
-  expiresAt: number | null;
-  userName: string | null;
+  accessToken: string | undefined;
+  refreshToken: string | undefined;
+  expiresAt: number | undefined;
+  userName: string | undefined;
   setTokens: (tokens: TokenSet) => void;
   setUserName: (userName: string) => void;
   clearTokens: () => void;
@@ -20,14 +20,14 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      accessToken: null,
-      refreshToken: null,
-      expiresAt: null,
-      userName: null,
+      accessToken: undefined,
+      refreshToken: undefined,
+      expiresAt: undefined,
+      userName: undefined,
       setTokens: (tokens) =>
         set({
           accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken || null,
+          refreshToken: tokens.refreshToken,
           expiresAt: tokens.expiresAt,
         }),
       setUserName: (userName) =>
@@ -36,10 +36,10 @@ export const useAuthStore = create<AuthState>()(
         }),
       clearTokens: () =>
         set({
-          accessToken: null,
-          refreshToken: null,
-          expiresAt: null,
-          userName: null,
+          accessToken: undefined,
+          refreshToken: undefined,
+          expiresAt: undefined,
+          userName: undefined,
         }),
     }),
     {

@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { useWikimediaCommons } from '../hooks/useWikimediaCommons';
 
 export function Header() {
@@ -5,7 +6,9 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center border-b border-zinc-800 bg-black px-6">
-      <h1 className="text-xl font-bold tracking-tight text-white">Commons Uploader</h1>
+      <Link to="/upload" className="text-xl font-bold tracking-tight text-white hover:text-gray-200 transition-colors">
+        Commons Uploader
+      </Link>
       {isAuthenticated ? (
         <div className="ml-auto flex items-center gap-4">
           {userName && <span className="text-sm text-white">{userName}</span>}

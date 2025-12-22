@@ -41,6 +41,12 @@ export default defineConfig([
             },
             "props": {
               "properties": false
+            },
+            "db": {
+              "database": false
+            },
+            "utils": {
+              "utilities": false
             }
           }
         }
