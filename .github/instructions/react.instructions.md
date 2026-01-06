@@ -1,5 +1,5 @@
 ---
-applyTo: '**/*.ts, **/*.tsx'
+applyTo: "**/*.ts, **/*.tsx"
 ---
 
 Use named function over arrow functions
@@ -18,6 +18,10 @@ function MyComponent() {
 
 ---
 
-This is a desktop first application. so make sure to use the realestate available on larger screens wisely. make the UI dense. use grids and flexbox to create layouts that adapt to larger screens.
+This is a desktop first application. so make sure to use the real estate available on larger screens wisely. make the UI dense. Use grids and flexbox to create layouts that adapt to larger screens.
 
+---
 
+When ever a component is not directly related to a page, break it out into a smaller reusable component. This will make it easier to test and reuse in other parts of the application.
+
+In addition, always see if there are existing components that can be reused before creating a new one.

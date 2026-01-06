@@ -12,22 +12,6 @@ This report documents usability issues found during testing of the Commons Uploa
 
 ## Issues Found
 
-### Issue #1: Duplicate Filename Warning Missing
-
-**Severity:** 🔴 High  
-**Location:** Review Tab  
-**Description:** When multiple images use the same title template with identical variable values, they generate the same Commons filename (e.g., "Test Image - (2026-01-06).jpg"). The app does not warn users that this will cause conflicts on Wikimedia Commons, where filenames must be unique.
-
-**Steps to Reproduce:**
-
-1. Upload two or more images
-2. Go to Variables tab, set up a title template like `<<<subject>>> - (<<<date>>>).jpg`
-3. Go to Fill Out tab, use "Copy from previous" or set identical values for all images
-4. Go to Review tab - observe both images have the same "Commons Title"
-
-**Expected:** Warning message when duplicate filenames are detected  
-**Actual:** No warning; user could attempt to upload files with conflicting names
-
 ---
 
 ### Issue #2: Debug Console.error Left in Production Code
@@ -182,14 +166,14 @@ This report documents usability issues found during testing of the Commons Uploa
 
 ## Recommendations Summary
 
-| Priority | Issue | Recommendation |
-|----------|-------|----------------|
-| High | Duplicate filenames | Add duplicate filename detection with warning |
-| Medium | Console.error | Remove or conditionalize debug logging |
-| Medium | No remove confirmation | Add confirmation dialog |
-| Low | Template display | Use proper textarea with multi-line display |
-| Low | Use global states | Add visual distinction for global variable fields |
-| Low | Badge inconsistency | Standardize or add tooltips |
+| Priority | Issue                  | Recommendation                                    |
+| -------- | ---------------------- | ------------------------------------------------- |
+| High     | Duplicate filenames    | Add duplicate filename detection with warning     |
+| Medium   | Console.error          | Remove or conditionalize debug logging            |
+| Medium   | No remove confirmation | Add confirmation dialog                           |
+| Low      | Template display       | Use proper textarea with multi-line display       |
+| Low      | Use global states      | Add visual distinction for global variable fields |
+| Low      | Badge inconsistency    | Standardize or add tooltips                       |
 
 ---
 
