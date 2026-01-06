@@ -31,7 +31,7 @@ export function VariablesTab() {
         <div>
           <h3 className="mb-1 text-lg font-medium text-white">Title Template</h3>
           <p className="text-sm text-gray-500">
-            Define the filename pattern for uploaded images. Use {"{{{variable}}}"} for dynamic parts.
+            Define the filename pattern for uploaded images. Use {"<<<variable>>>"} for dynamic parts.
           </p>
         </div>
         <input
@@ -48,7 +48,7 @@ export function VariablesTab() {
         <div>
           <h3 className="mb-1 text-lg font-medium text-white">Description Template</h3>
           <p className="text-sm text-gray-500">
-            The template applied to all images. Use {"{{{variable}}}"} for values that change per image.
+            The template applied to all images. Use {"<<<variable>>>"} for values that change per image.
           </p>
         </div>
         <textarea
@@ -56,8 +56,8 @@ export function VariablesTab() {
           onChange={(event) => setTemplate(event.target.value)}
           placeholder={`=={{int:filedesc}}==
 {{Information
-|description={{en|1={{{description}}}}}
-|date={{{date}}}
+|description={{en|1=<<<description>>>}}
+|date=<<<date>>>
 |source={{own}}
 |author=[[User:YourUsername|YourUsername]]
 }}
@@ -65,7 +65,7 @@ export function VariablesTab() {
 =={{int:license-header}}==
 {{self|cc-by-sa-4.0}}
 
-[[Category:{{{category}}}]]`}
+[[Category:<<<category>>>]]`}
           className="h-64 w-full resize-y rounded-lg border border-zinc-700 bg-zinc-900 p-4 font-mono text-sm text-gray-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </section>
@@ -114,13 +114,13 @@ export function VariablesTab() {
                   key={key}
                   className="rounded-full bg-blue-600/20 px-3 py-1 text-sm font-medium text-blue-400"
                 >
-                  {`{{{${key}}}}`}
+                  {`<<<${key}>>>`}
                 </span>
               ))}
             </div>
           ) : (
             <p className="italic text-gray-500">
-              No variables detected. Add variables like {"{{{variable}}}"} to your template.
+              No variables detected. Add variables like {"<<<variable>>>"} to your template.
             </p>
           )}
         </section>

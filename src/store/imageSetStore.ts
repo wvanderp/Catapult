@@ -61,17 +61,17 @@ export const useImageSetStore = create<StateStore>()(
             imageSet: {
                 template: `=={{int:filedesc}}==
 {{Information
-|description={{en|1={{{description}}}}}
-|date={{{date}}}
+|description={{en|1=<<<description>>>}}
+|date=<<<date>>>
 |source={{own}}
-|author=[[User:{{{YourUsername}}}|{{{YourUsername}}}]]
+|author=[[User:<<<YourUsername>>>|<<<YourUsername>>>]]
 }}
 
 =={{int:license-header}}==
 {{self|cc-by-sa-4.0}}
 
-[[Category:{{{category}}}]]`,
-                titleTemplate: '{{{subject}}} - ({{{date}}}).jpg',
+[[Category:<<<category>>>]]`,
+                titleTemplate: '<<<subject>>> - (<<<date>>>).jpg',
                 globalVariables: {},
                 images: {},
             },

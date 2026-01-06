@@ -1,5 +1,5 @@
 export function extractTemplateKeys(template: string): string[] {
-  const regex = /\{\{\{(.*?)\}\}\}/g;
+  const regex = /<<<(.*?)>>>/g;
   const keys = new Set<string>();
   let match;
   while ((match = regex.exec(template)) !== null) {
@@ -32,24 +32,46 @@ function getNestedValue(object: Record<string, unknown>, path: string): unknown 
 }
 
 /**
- * Apply a template with variable substitution, supporting nested paths like exif.field_name.
+ * Context object for template substitution.
+ * 
+ * Structure:
+ * - `exif`: EXIF data extracted from the image (accessed via <<<exif.fieldName>>>)
+ * - `global`: Global variables that apply to all images (accessed via <<<global.fieldName>>>)
+ * - Root-level keys: Per-image/local keys for substitution (accessed via <<<keyName>>>)
+ * 
+ * Priority for non-prefixed keys: local (root) > global (implicit fallback)
+ */
+export interface TemplateContext {
+  exif?: Record<string, unknown>;
+  global?: Record<string, string>;
+  [key: string]: unknown;
+}
+
+/**
+ * Apply a template with variable substitution, supporting nested paths.
  * Recursively resolves variables until no more substitutions can be made.
  * 
- * @param template - The template string with {{{variable}}} placeholders
- * @param imageKeys - Per-image keys for substitution
- * @param globalVariables - Global variables that apply to all images
- * @param exifData - EXIF data extracted from the image
+ * @param template - The template string with <<<variable>>> placeholders
+ * @param context - The context object containing nested objects and local keys
  * @param maxIterations - Maximum number of recursive iterations (default: 10)
  * @returns The template with all resolvable variables substituted
+ * 
+ * @example
+ * ```ts
+ * const context = {
+ *   exif: { DateTimeOriginal: '2024-01-15', Make: 'Canon' },
+ *   global: { author: 'JohnDoe', license: 'CC-BY-SA' },
+ *   description: 'A beautiful sunset',  // local/per-image key
+ * };
+ * applyTemplate('<<<description>>> by <<<global.author>>>', context);
+ * ```
  */
 export function applyTemplate(
   template: string,
-  imageKeys: Record<string, string>,
-  globalVariables: Record<string, string>,
-  exifData: Record<string, unknown> = {},
+  context: TemplateContext,
   maxIterations: number = 10
 ): string {
-  const regex = /\{\{\{(.*?)\}\}\}/g;
+  const regex = /<<<(.*?)>>>/g;
   const MISSING_PLACEHOLDER = '<<<missing>>>';
   
   let result = template;
@@ -64,38 +86,10 @@ export function applyTemplate(
     result = result.replaceAll(regex, (fullMatch, key) => {
       const trimmedKey = (key as string).trim();
       
-      // Check for explicit global.* prefix first
-      if (trimmedKey.startsWith('global.')) {
-        const globalKey = trimmedKey.slice(7); // Remove 'global.' prefix
-        const value = globalVariables[globalKey];
-        if (value !== undefined && value !== '') {
-          return value;
-        }
-      }
-      
-      // First check image-specific keys
-      if (trimmedKey in imageKeys) {
-        const value = imageKeys[trimmedKey];
-        if (value !== undefined && value !== '') {
-          return value;
-        }
-      }
-      
-      // Then check global variables (implicit fallback)
-      if (trimmedKey in globalVariables) {
-        const value = globalVariables[trimmedKey];
-        if (value !== undefined && value !== '') {
-          return value;
-        }
-      }
-      
-      // Check for special prefixed paths like exif.field_name
-      if (trimmedKey.startsWith('exif.')) {
-        const exifPath = trimmedKey.slice(5); // Remove 'exif.' prefix
-        const value = getNestedValue(exifData, exifPath);
-        if (value !== undefined && value !== null && value !== '') {
-          return String(value);
-        }
+      // Use dynamic nested lookup for any dot-notation path
+      const value = getNestedValue(context as Record<string, unknown>, trimmedKey);
+      if (value !== undefined && value !== null && value !== '') {
+        return String(value);
       }
       
       // On the last iteration, show missing placeholder

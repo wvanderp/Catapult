@@ -56,7 +56,7 @@ export function ImageItem({ id }: ImageItemProperties) {
                     ))}
                     {keys.length === 0 && (
                         <p className="text-sm italic text-gray-500">
-                            No variables found in template. Add variables like {"{{{variable}}}"} to the template above.
+                            No variables found in template. Add variables like {"<<<variable>>>"} to the template above.
                         </p>
                     )}
                 </div>

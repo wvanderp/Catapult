@@ -11,7 +11,7 @@ export function TemplateInput() {
           Template for images
         </label>
         <p className="text-sm text-gray-500">
-          The template below is applied to all images. Use triple curly braces for variables (e.g. {"{{{title}}}"}). You will be asked to fill in the values for each image.
+          The template below is applied to all images. Use triple angle brackets for variables (e.g. {"<<<title>>>"}). You will be asked to fill in the values for each image.
         </p>
       </div>
       <textarea

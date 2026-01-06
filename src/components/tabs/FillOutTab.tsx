@@ -178,7 +178,7 @@ function ExifDisplay({ exifData, onInsertExifReference, activeFieldKey }: ExifDi
           disabled={!activeFieldKey}
           className={`flex flex-col rounded bg-zinc-800 p-2 text-left transition-colors ${activeFieldKey ? 'cursor-pointer hover:bg-zinc-700' : 'cursor-default opacity-60'
             }`}
-          title={activeFieldKey ? `Click to insert {{{exif.${key}}}} into ${activeFieldKey}` : 'Select a field above first'}
+          title={activeFieldKey ? `Click to insert <<<exif.${key}>>> into ${activeFieldKey}` : 'Select a field above first'}
         >
           <span className="text-xs text-gray-500">{key}</span>
           <span className="truncate text-gray-300">{value}</span>
@@ -217,7 +217,7 @@ function GlobalVariablesDisplay({ globalVariables, keys, onInsertGlobalReference
           disabled={!activeFieldKey}
           className={`flex flex-col rounded bg-zinc-800 p-2 text-left transition-colors ${activeFieldKey ? 'cursor-pointer hover:bg-zinc-700' : 'cursor-default opacity-60'
             }`}
-          title={activeFieldKey ? `Click to insert {{{global.${key}}}} into ${activeFieldKey}` : 'Select a field above first'}
+          title={activeFieldKey ? `Click to insert <<<global.${key}>>> into ${activeFieldKey}` : 'Select a field above first'}
         >
           <span className="text-xs text-gray-500">{key}</span>
           <span className="truncate text-gray-300">{globalVariables[key]}</span>
@@ -267,7 +267,7 @@ export function FillOutTab() {
       <div className="py-12 text-center">
         <div className="mb-4 text-5xl">📝</div>
         <h2 className="mb-2 text-xl font-medium text-white">No variables defined</h2>
-        <p className="mb-6 text-gray-400">Add variables to your template first (e.g., {"{{{description}}}"}).</p>
+        <p className="mb-6 text-gray-400">Add variables to your template first (e.g., {"<<<description>>>"}).</p>
         <Link
           to="/variables"
           className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
@@ -296,11 +296,11 @@ export function FillOutTab() {
   }
 
   function handleInsertGlobalReference(variableKey: string) {
-    insertIntoField(`{{{global.${variableKey}}}}`);
+    insertIntoField(`<<<global.${variableKey}>>>`);
   }
 
   function handleInsertExifReference(exifPath: string) {
-    insertIntoField(`{{{exif.${exifPath}}}}`);
+    insertIntoField(`<<<exif.${exifPath}>>>`);
   }
 
   function copyFromPrevious() {

@@ -159,9 +159,13 @@ export function ReviewTab() {
   const processedImages = useMemo(() => {
     return imageIds.map((id) => {
       const image = images[id];
-      const exifData = image.exifData ?? {};
-      const title = applyTemplate(titleTemplate, image.keys, globalVariables, exifData);
-      const description = applyTemplate(template, image.keys, globalVariables, exifData);
+      const context = {
+        ...image.keys,
+        exif: image.exifData ?? {},
+        global: globalVariables,
+      };
+      const title = applyTemplate(titleTemplate, context);
+      const description = applyTemplate(template, context);
       return { id, image, title, description };
     });
   }, [imageIds, images, titleTemplate, template, globalVariables]);
