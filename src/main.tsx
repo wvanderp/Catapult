@@ -68,7 +68,7 @@ const routeTree = rootRoute.addChildren([
 
 const router = createRouter({
   routeTree,
-  basepath: '/commons-uploader',
+  basepath: '/catapult',
 })
 
 declare module '@tanstack/react-router' {

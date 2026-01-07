@@ -9,7 +9,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center border-b border-zinc-800 bg-black px-6">
       <Link to="/upload" className="text-xl font-bold tracking-tight text-white hover:text-gray-200 transition-colors">
-        Commons Uploader
+        Catapult
       </Link>
       <div className="ml-auto flex items-center gap-4">
         <button

@@ -1,12 +1,12 @@
-# UI Usability Report - Commons Uploader
+# UI Usability Report - Catapult
 
 **Date:** January 6, 2026  
 **Tester:** Automated UI Testing (Playwright)  
-**App URL:** <http://localhost:5173/commons-uploader/>
+**App URL:** <http://localhost:5173/catapult/>
 
 ## Overview
 
-This report documents usability issues found during testing of the Commons Uploader application. The testing focused on the complete file upload flow without completing an actual upload to Wikimedia Commons.
+This report documents usability issues found during testing of the Catapult application. The testing focused on the complete file upload flow without completing an actual upload to Wikimedia Commons.
 
 ---
 
