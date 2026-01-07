@@ -6,6 +6,7 @@ import { ImageCarousel, type CarouselImage } from '../ImageCarousel';
 import { FieldInput } from '../FieldInput';
 import { ContextDataPanel } from '../ContextDataPanel';
 import { ImageViewer } from '../ImageViewer';
+import { createUtilityContext } from '../../utils/utilityContext';
 
 export function FillOutTab() {
   const images = useImageSetStore((state) => state.imageSet.images);
@@ -80,11 +81,6 @@ export function FillOutTab() {
   const currentId = imageIds[safeCurrentIndex];
   const currentImage = images[currentId];
   const imageUrl = `data:${currentImage.mimeType};base64,${currentImage.file}`;
-
-  // Extract file extension for utility context
-  const currentExtension = currentImage.name.includes('.')
-    ? currentImage.name.split('.').pop()?.toLowerCase() ?? ''
-    : '';
 
   function handleKeyChange(key: string, value: string) {
     updateImageKeys(currentId, {
@@ -218,10 +214,7 @@ export function FillOutTab() {
                 ...currentImage.keys,
                 global: globalVariables,
                 exif: currentImage.exifData,
-                utility: {
-                  extension: currentExtension,
-                  index: safeCurrentIndex,
-                },
+                utility: createUtilityContext(currentImage, safeCurrentIndex),
               };
 
               return (
@@ -247,10 +240,7 @@ export function FillOutTab() {
         templateKeys={keys}
         activeFieldKey={activeFieldKey}
         onInsertReference={handleInsertReference}
-        utility={{
-          extension: currentExtension,
-          index: safeCurrentIndex,
-        }}
+        utility={createUtilityContext(currentImage, safeCurrentIndex)}
       />
 
       {/* Image viewer modal */}

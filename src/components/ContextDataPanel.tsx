@@ -82,6 +82,7 @@ export interface ContextDataPanelProps {
     utility?: {
         extension: string;
         index: number;
+        date?: string;
     };
 }
 
@@ -112,6 +113,15 @@ export function ContextDataPanel({
                     referenceKey: '<<<utility.index>>>',
                 },
             ];
+
+            if (utility.date) {
+                utilityItems.push({
+                    key: 'date',
+                    value: utility.date,
+                    referenceKey: '<<<utility.date>>>',
+                });
+            }
+
             result.push({ title: 'Utility', items: utilityItems });
         }
 

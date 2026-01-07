@@ -47,6 +47,7 @@ function getNestedValue(
  * - `utility`: Utility information about the file (accessed via <<<utility.fieldName>>>)
  *   - `extension`: File extension without the dot (e.g., 'jpg', 'png')
  *   - `index`: Index of the file in the upload queue (0-based)
+ *   - `date`: Formatted date from EXIF data in Wikimedia Commons format (YYYY-MM-DD HH:mm)
  * - Root-level keys: Per-image/local keys for substitution (accessed via <<<keyName>>>)
  *
  * Priority for non-prefixed keys: local (root) > global (implicit fallback)
@@ -57,6 +58,7 @@ export interface TemplateContext {
   utility?: {
     extension: string;
     index: number;
+    date?: string;
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -89,6 +91,8 @@ export function applyTemplate(
 ): string {
   const regex = /<<<(.*?)>>>/g;
   const MISSING_PLACEHOLDER = "<<<missing>>>";
+
+  console.log(context);
 
   let result = template;
   let previousResult = "";

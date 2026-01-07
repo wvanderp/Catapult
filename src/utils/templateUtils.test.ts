@@ -358,5 +358,19 @@ describe("applyTemplate", () => {
       );
       expect(result).toBe("JohnDoe_photo_0.png");
     });
+
+    it("should resolve utility.date value", () => {
+      const result = applyTemplate("Date taken: <<<utility.date>>>", {
+        utility: { extension: "jpg", index: 0, date: "2025-06-15 11:02" },
+      });
+      expect(result).toBe("Date taken: 2025-06-15 11:02");
+    });
+
+    it("should handle missing utility.date", () => {
+      const result = applyTemplate("Date: <<<utility.date>>>", {
+        utility: { extension: "jpg", index: 0 },
+      });
+      expect(result).toBe("Date: <<<missing>>>");
+    });
   });
 });

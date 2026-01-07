@@ -1,6 +1,7 @@
 import axios from "axios";
 import { generateCodeVerifier, generateCodeChallenge } from "../utils/pkce";
 import { useAuthStore } from "../store/authStore";
+import { normalizeMediaWikiFilename } from "../utils/mediawikiUtils";
 
 const CLIENT_ID = import.meta.env.VITE_WIKIMEDIA_CLIENT_ID! as string;
 
@@ -480,8 +481,12 @@ export function useWikimediaCommons() {
       crossorigin: "",
     }).toString();
 
+    // Normalize filename to match MediaWiki's title normalization rules
+    // This ensures the filename passes MediaWiki's checkBadFileName validation.
+    const encodedFilename = normalizeMediaWikiFilename(filename);
+
     const form = new FormData();
-    form.append("filename", filename);
+    form.append("filename", encodedFilename);
     form.append("text", text); // Page content
     form.append("token", csrfToken);
 

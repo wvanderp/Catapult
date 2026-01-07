@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { base64ToFile, extractExifData } from "./exifUtils";
+import { base64ToFile, extractExifData, formatExifDate } from "./exifUtils";
 
 describe("base64ToFile", () => {
   it("should convert a base64 string to a File object", () => {
@@ -120,5 +120,58 @@ describe("extractExifData", () => {
     const hasMakeOrModel = "Make" in exifData || "Model" in exifData;
 
     expect(hasMakeOrModel).toBe(true);
+  });
+});
+
+describe("formatExifDate", () => {
+  it("should format a Date object to YYYY-MM-DD HH:mm", () => {
+    const date = new Date("2025-03-02T12:52:32+01:00");
+    const result = formatExifDate(date);
+    expect(result).toBe("2025-03-02 12:52");
+  });
+
+  it("should format EXIF string format with colons", () => {
+    const exifDate = "2024:01:15 10:30:00";
+    const result = formatExifDate(exifDate);
+    expect(result).toBe("2024-01-15 10:30");
+  });
+
+  it("should format standard date string", () => {
+    const dateString = "2024-06-15 14:22:00";
+    const result = formatExifDate(dateString);
+    expect(result).toBe("2024-06-15 14:22");
+  });
+
+  it("should return undefined for null", () => {
+    const result = formatExifDate(null);
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for undefined", () => {
+    const result = formatExifDate(undefined);
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for invalid date string", () => {
+    const result = formatExifDate("invalid date");
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for non-date types", () => {
+    const result = formatExifDate(12345);
+    expect(result).toBeUndefined();
+  });
+
+  it("should pad single-digit months and days", () => {
+    const date = new Date("2024-03-05T08:05:00");
+    const result = formatExifDate(date);
+    expect(result).toBe("2024-03-05 08:05");
+  });
+
+  it("should handle the actual EXIF date from test image", async () => {
+    const exifDate =
+      "Sun Mar 02 2025 12:52:32 GMT+0100 (Midden-Europese standaardtijd)";
+    const result = formatExifDate(exifDate);
+    expect(result).toBe("2025-03-02 12:52");
   });
 });

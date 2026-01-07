@@ -65,3 +65,41 @@ export function base64ToFile(
   const byteArray = new Uint8Array(byteNumbers);
   return new File([byteArray], filename, { type: mimeType });
 }
+
+/**
+ * Format EXIF date to Wikimedia Commons format (YYYY-MM-DD HH:mm)
+ * Handles Date objects and EXIF string formats like "2024:01:15 10:30:00"
+ *
+ * @param dateValue - The date value from EXIF data (Date object or string)
+ * @returns Formatted date string or undefined if invalid
+ */
+export function formatExifDate(dateValue: unknown): string | undefined {
+  if (!dateValue) return undefined;
+
+  let date: Date;
+
+  if (dateValue instanceof Date) {
+    date = dateValue;
+  } else if (typeof dateValue === "string") {
+    // Handle EXIF format: "2024:01:15 10:30:00" -> "2024-01-15 10:30:00"
+    // Only replace colons in the date part (first two occurrences: YYYY:MM:DD)
+    const normalized = dateValue.replace(
+      /^(\d{4}):(\d{2}):(\d{2})/,
+      "$1-$2-$3"
+    );
+    date = new Date(normalized);
+  } else {
+    return undefined;
+  }
+
+  if (Number.isNaN(date.getTime())) return undefined;
+
+  // Format as YYYY-MM-DD HH:mm
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}

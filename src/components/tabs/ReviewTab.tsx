@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useImageSetStore, type Image } from '../../store/imageSetStore';
 import { applyTemplate } from '../../utils/templateUtils';
+import { createUtilityContext } from '../../utils/utilityContext';
 
 import { useWikimediaCommons, type UploadWarning } from '../../hooks/useWikimediaCommons';
 
@@ -159,19 +160,11 @@ export function ReviewTab() {
   const processedImages = useMemo(() => {
     return imageIds.map((id, index) => {
       const image = images[id];
-      // Extract file extension without the dot
-      const extension = image.name.includes('.')
-        ? image.name.split('.').pop()?.toLowerCase() ?? ''
-        : '';
-
       const context = {
         ...image.keys,
         exif: image.exifData ?? {},
         global: globalVariables,
-        utility: {
-          extension,
-          index,
-        },
+        utility: createUtilityContext(image, index),
       };
       const title = applyTemplate(titleTemplate, context);
       const description = applyTemplate(template, context);
