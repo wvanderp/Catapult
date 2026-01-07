@@ -157,12 +157,21 @@ export function ReviewTab() {
 
   // Generate titles and descriptions for all images
   const processedImages = useMemo(() => {
-    return imageIds.map((id) => {
+    return imageIds.map((id, index) => {
       const image = images[id];
+      // Extract file extension without the dot
+      const extension = image.name.includes('.')
+        ? image.name.split('.').pop()?.toLowerCase() ?? ''
+        : '';
+
       const context = {
         ...image.keys,
         exif: image.exifData ?? {},
         global: globalVariables,
+        utility: {
+          extension,
+          index,
+        },
       };
       const title = applyTemplate(titleTemplate, context);
       const description = applyTemplate(template, context);
@@ -199,7 +208,7 @@ export function ReviewTab() {
       try {
         // Convert base64 to File
         const byteCharacters = atob(image.file);
-        const byteNumbers = Array.from({ length: byteCharacters.length }, (_, index) => 
+        const byteNumbers = Array.from({ length: byteCharacters.length }, (_, index) =>
           byteCharacters.codePointAt(index) ?? 0
         );
         const byteArray = new Uint8Array(byteNumbers);
@@ -207,7 +216,7 @@ export function ReviewTab() {
         const file = new File([blob], image.name, { type: image.mimeType });
 
         const result = await uploadFile(file, title, description);
-        
+
         if (result.success) {
           setUploadProgress((previous) => ({ ...previous, [id]: 'success' }));
         } else if (result.warnings && result.warnings.length > 0) {

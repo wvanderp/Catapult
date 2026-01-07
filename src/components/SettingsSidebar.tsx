@@ -172,7 +172,7 @@ function SettingsSidebar() {
                                 onChange={(e) => setDefaultTitleTemplate(e.target.value)}
                                 className="mt-1 block w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
                                 rows={2}
-                                placeholder="<<<subject>>> - (<<<date>>>).jpg"
+                                placeholder="<<<subject>>> - (<<<date>>>).<<<utility.extension>>>"
                             />
                         </label>
 

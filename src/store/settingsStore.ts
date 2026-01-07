@@ -40,7 +40,8 @@ export const INITIAL_TEMPLATE = `=={{int:filedesc}}==
 [[Category:<<<category>>>]]`;
 
 /** Default title template - exported for reuse in other stores */
-export const INITIAL_TITLE_TEMPLATE = "<<<subject>>> - (<<<date>>>).jpg";
+export const INITIAL_TITLE_TEMPLATE =
+  "<<<subject>>> - (<<<date>>>).<<<utility.extension>>>";
 
 export const useSettingsStore = create<SettingsState>()(
   persist(

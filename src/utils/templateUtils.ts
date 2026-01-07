@@ -12,58 +12,74 @@ export function extractTemplateKeys(template: string): string[] {
 
 /**
  * Get a nested value from an object using dot notation
- * 
+ *
  * @param obj - The object to get the value from
  * @param path - The dot-separated path to the value (e.g., "exif.DateTimeOriginal")
  * @returns The value at the path, or undefined if not found
  */
-function getNestedValue(object: Record<string, unknown>, path: string): unknown {
-  const parts = path.split('.');
+function getNestedValue(
+  object: Record<string, unknown>,
+  path: string
+): unknown {
+  const parts = path.split(".");
   let current: unknown = object;
-  
+
   for (const part of parts) {
-    if (current === null || current === undefined || typeof current !== 'object') {
+    if (
+      current === null ||
+      current === undefined ||
+      typeof current !== "object"
+    ) {
       return undefined;
     }
     current = (current as Record<string, unknown>)[part];
   }
-  
+
   return current;
 }
 
 /**
  * Context object for template substitution.
- * 
+ *
  * Structure:
  * - `exif`: EXIF data extracted from the image (accessed via <<<exif.fieldName>>>)
  * - `global`: Global variables that apply to all images (accessed via <<<global.fieldName>>>)
+ * - `utility`: Utility information about the file (accessed via <<<utility.fieldName>>>)
+ *   - `extension`: File extension without the dot (e.g., 'jpg', 'png')
+ *   - `index`: Index of the file in the upload queue (0-based)
  * - Root-level keys: Per-image/local keys for substitution (accessed via <<<keyName>>>)
- * 
+ *
  * Priority for non-prefixed keys: local (root) > global (implicit fallback)
  */
 export interface TemplateContext {
   exif?: Record<string, unknown>;
   global?: Record<string, string>;
+  utility?: {
+    extension: string;
+    index: number;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
 /**
  * Apply a template with variable substitution, supporting nested paths.
  * Recursively resolves variables until no more substitutions can be made.
- * 
+ *
  * @param template - The template string with <<<variable>>> placeholders
  * @param context - The context object containing nested objects and local keys
  * @param maxIterations - Maximum number of recursive iterations (default: 10)
  * @returns The template with all resolvable variables substituted
- * 
+ *
  * @example
  * ```ts
  * const context = {
  *   exif: { DateTimeOriginal: '2024-01-15', Make: 'Canon' },
  *   global: { author: 'JohnDoe', license: 'CC-BY-SA' },
+ *   utility: { extension: 'jpg', index: 0 },
  *   description: 'A beautiful sunset',  // local/per-image key
  * };
- * applyTemplate('<<<description>>> by <<<global.author>>>', context);
+ * applyTemplate('<<<description>>> by <<<global.author>>> (<<<utility.extension>>>)', context);
  * ```
  */
 export function applyTemplate(
@@ -72,39 +88,42 @@ export function applyTemplate(
   maxIterations: number = 10
 ): string {
   const regex = /<<<(.*?)>>>/g;
-  const MISSING_PLACEHOLDER = '<<<missing>>>';
-  
+  const MISSING_PLACEHOLDER = "<<<missing>>>";
+
   let result = template;
-  let previousResult = '';
+  let previousResult = "";
   let iteration = 0;
-  
+
   // Keep resolving until no more substitutions can be made or max iterations reached
   while (result !== previousResult && iteration < maxIterations) {
     previousResult = result;
     iteration++;
-    
+
     result = result.replaceAll(regex, (fullMatch, key) => {
       const trimmedKey = (key as string).trim();
-      
+
       // Use dynamic nested lookup for any dot-notation path
-      const value = getNestedValue(context as Record<string, unknown>, trimmedKey);
-      if (value !== undefined && value !== null && value !== '') {
+      const value = getNestedValue(
+        context as Record<string, unknown>,
+        trimmedKey
+      );
+      if (value !== undefined && value !== null && value !== "") {
         return String(value);
       }
-      
+
       // On the last iteration, show missing placeholder
       // For intermediate iterations, keep the variable for potential resolution
       if (iteration === maxIterations) {
         return MISSING_PLACEHOLDER;
       }
-      
+
       // Keep the variable unchanged for potential resolution in next iteration
       return fullMatch;
     });
   }
-  
+
   // Final pass to mark any remaining unresolved variables as missing
   result = result.replaceAll(regex, () => MISSING_PLACEHOLDER);
-  
+
   return result;
 }

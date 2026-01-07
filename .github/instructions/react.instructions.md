@@ -25,3 +25,7 @@ This is a desktop first application. so make sure to use the real estate availab
 When ever a component is not directly related to a page, break it out into a smaller reusable component. This will make it easier to test and reuse in other parts of the application.
 
 In addition, always see if there are existing components that can be reused before creating a new one.
+
+---
+
+always put the props interface/type above the component that uses it. This will make it easier to find the props type when reading the component code.

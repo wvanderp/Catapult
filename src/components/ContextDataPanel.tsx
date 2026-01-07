@@ -11,14 +11,6 @@ interface ContextSection {
     items: ContextItem[];
 }
 
-export interface ContextDataPanelProps {
-    globalVariables: Record<string, string>;
-    exifData: Record<string, unknown>;
-    imageKeys: Record<string, string>;
-    templateKeys: string[];
-    activeFieldKey: string | undefined;
-    onInsertReference: (reference: string) => void;
-}
 
 const DEFAULT_EXIF_FIELDS = [
     'DateTimeOriginal',
@@ -57,9 +49,9 @@ function ContextSectionDisplay({ section, disabled, onInsertReference }: {
     section: ContextSection;
     disabled: boolean;
     onInsertReference: (reference: string) => void;
-}): JSX.Element | null {
+}): React.JSX.Element | undefined {
     if (section.items.length === 0) {
-        return null;
+        return undefined;
     }
 
     return (
@@ -81,18 +73,47 @@ function ContextSectionDisplay({ section, disabled, onInsertReference }: {
     );
 }
 
+export interface ContextDataPanelProps {
+    globalVariables: Record<string, string>;
+    exifData: Record<string, unknown>;
+    templateKeys: string[];
+    activeFieldKey: string | undefined;
+    onInsertReference: (reference: string) => void;
+    utility?: {
+        extension: string;
+        index: number;
+    };
+}
+
 export function ContextDataPanel({
     globalVariables,
     exifData,
-    imageKeys,
     templateKeys,
     activeFieldKey,
     onInsertReference,
+    utility,
 }: ContextDataPanelProps) {
     const [showAllExif, setShowAllExif] = useState(false);
 
     const sections = useMemo<ContextSection[]>(() => {
         const result: ContextSection[] = [];
+
+        // Utility context section
+        if (utility) {
+            const utilityItems: ContextItem[] = [
+                {
+                    key: 'extension',
+                    value: utility.extension,
+                    referenceKey: '<<<utility.extension>>>',
+                },
+                {
+                    key: 'index',
+                    value: String(utility.index),
+                    referenceKey: '<<<utility.index>>>',
+                },
+            ];
+            result.push({ title: 'Utility', items: utilityItems });
+        }
 
         // Global variables section
         const globalItems: ContextItem[] = templateKeys
@@ -110,7 +131,7 @@ export function ContextDataPanel({
         // EXIF data section - dynamically get all EXIF fields
         const exifItems: ContextItem[] = [];
         const exifFields = showAllExif
-            ? Object.keys(exifData).sort()
+            ? Object.keys(exifData).toSorted()
             : DEFAULT_EXIF_FIELDS.filter(field => field in exifData);
 
         for (const field of exifFields) {
@@ -128,7 +149,7 @@ export function ContextDataPanel({
         }
 
         return result;
-    }, [globalVariables, exifData, templateKeys, showAllExif]);
+    }, [globalVariables, exifData, templateKeys, showAllExif, utility]);
 
     const hasAnyData = sections.length > 0;
     const hasExifData = Object.keys(exifData).length > 0;

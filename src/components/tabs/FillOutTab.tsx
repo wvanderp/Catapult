@@ -19,8 +19,8 @@ export function FillOutTab() {
 
   const keys = useMemo(() => {
     const allKeys = extractTemplateKeys(titleTemplate + ' ' + template);
-    // Filter out global.* and exif.* prefixed keys as those are special references
-    return allKeys.filter(key => !key.startsWith('global.') && !key.startsWith('exif.'));
+    // Filter out global.*, exif.*, and utility.* prefixed keys as those are special references
+    return allKeys.filter(key => !key.startsWith('global.') && !key.startsWith('exif.') && !key.startsWith('utility.'));
   }, [titleTemplate, template]);
 
   const safeCurrentIndex = Math.min(currentIndex, Math.max(0, imageIds.length - 1));
@@ -78,6 +78,11 @@ export function FillOutTab() {
   const currentId = imageIds[safeCurrentIndex];
   const currentImage = images[currentId];
   const imageUrl = `data:${currentImage.mimeType};base64,${currentImage.file}`;
+
+  // Extract file extension for utility context
+  const currentExtension = currentImage.name.includes('.')
+    ? currentImage.name.split('.').pop()?.toLowerCase() ?? ''
+    : '';
 
   function handleKeyChange(key: string, value: string) {
     updateImageKeys(currentId, {
@@ -219,10 +224,13 @@ export function FillOutTab() {
       <ContextDataPanel
         globalVariables={globalVariables}
         exifData={currentImage.exifData ?? {}}
-        imageKeys={currentImage.keys}
         templateKeys={keys}
         activeFieldKey={activeFieldKey}
         onInsertReference={handleInsertReference}
+        utility={{
+          extension: currentExtension,
+          index: safeCurrentIndex,
+        }}
       />
     </div>
   );
