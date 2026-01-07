@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useImageSetStore } from '../../store/imageSetStore';
-import { extractTemplateKeys } from '../../utils/templateUtils';
+import { extractTemplateKeys, type TemplateContext } from '../../utils/templateUtils';
 import { ImageCarousel, type CarouselImage } from '../ImageCarousel';
 import { FieldInput } from '../FieldInput';
 import { ContextDataPanel } from '../ContextDataPanel';
+import { ImageViewer } from '../ImageViewer';
 
 export function FillOutTab() {
   const images = useImageSetStore((state) => state.imageSet.images);
@@ -16,6 +17,7 @@ export function FillOutTab() {
   const imageIds = useMemo(() => Object.keys(images), [images]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeFieldKey, setActiveFieldKey] = useState<string>();
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
 
   const keys = useMemo(() => {
     const allKeys = extractTemplateKeys(titleTemplate + ' ' + template);
@@ -125,22 +127,22 @@ export function FillOutTab() {
   const progressPercent = Math.round((filledFields / totalFields) * 100);
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col gap-3">
       {/* Header with navigation */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">Fill Out Details</h2>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400">
+          <h2 className="text-lg font-bold text-white">Fill Out Details</h2>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-300">
               Image {safeCurrentIndex + 1} of {imageIds.length}
             </span>
             <div className="flex gap-2">
               <button
                 onClick={handleNavigatePrevious}
                 disabled={safeCurrentIndex === 0}
-                className={`rounded px-3 py-1.5 text-sm transition-colors ${safeCurrentIndex === 0
-                  ? 'cursor-not-allowed text-gray-600'
-                  : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${safeCurrentIndex === 0
+                  ? 'cursor-not-allowed bg-zinc-800 text-gray-600'
+                  : 'bg-zinc-700 text-gray-200 hover:bg-zinc-600'
                   }`}
               >
                 ← Prev
@@ -148,14 +150,14 @@ export function FillOutTab() {
               {safeCurrentIndex < imageIds.length - 1 ? (
                 <button
                   onClick={handleNavigateNext}
-                  className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700"
+                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                 >
                   Next →
                 </button>
               ) : (
                 <Link
                   to="/review"
-                  className="rounded bg-green-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-green-700"
+                  className="inline-flex items-center rounded-lg bg-green-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-green-700"
                 >
                   Review ✓
                 </Link>
@@ -174,31 +176,35 @@ export function FillOutTab() {
       </div>
 
       {/* Main content area */}
-      <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid flex-1 gap-3 overflow-hidden lg:grid-cols-[400px_1fr]">
         {/* Image preview */}
-        <div className="flex items-center justify-center rounded-xl bg-zinc-900 p-4">
+        <div
+          className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-zinc-900 p-3 ring-1 ring-zinc-800 transition-all hover:bg-zinc-850 hover:ring-zinc-700"
+          onClick={() => setIsImageViewerOpen(true)}
+          title="Click to view fullscreen"
+        >
           <img
             src={imageUrl}
             alt={currentImage.name}
-            className="max-h-[300px] rounded object-contain lg:max-h-[400px]"
+            className="h-full w-full rounded object-contain"
           />
         </div>
 
         {/* Form fields */}
-        <div className="space-y-4 rounded-xl bg-zinc-800/50 p-4 lg:col-span-2">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col overflow-hidden rounded-lg bg-zinc-800/50 ring-1 ring-zinc-700/50">
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-700/50 px-4 py-3">
             <h3 className="truncate font-medium text-white" title={currentImage.name}>
               {currentImage.name}
             </h3>
             <div className="flex items-center gap-2">
-              <span className={`rounded px-2 py-1 text-sm ${progressPercent === 100 ? 'bg-green-600/20 text-green-400' : 'bg-zinc-700 text-gray-400'
+              <span className={`rounded-lg px-2.5 py-1 text-xs font-medium ${progressPercent === 100 ? 'bg-green-600/20 text-green-400 ring-1 ring-green-500/30' : 'bg-zinc-700 text-gray-300'
                 }`}>
                 {filledFields}/{totalFields}
               </span>
               {safeCurrentIndex > 0 && (
                 <button
                   onClick={copyFromPrevious}
-                  className="rounded bg-zinc-700 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-zinc-600"
+                  className="rounded-lg bg-zinc-700 px-3 py-1 text-xs font-medium text-gray-200 transition-colors hover:bg-zinc-600"
                 >
                   Copy from previous
                 </button>
@@ -206,16 +212,30 @@ export function FillOutTab() {
             </div>
           </div>
 
-          <div className="grid max-h-[250px] grid-cols-1 gap-3 overflow-y-auto pr-2 md:grid-cols-2">
-            {keys.map((key) => (
-              <FieldInput
-                key={key}
-                fieldKey={key}
-                value={currentImage.keys[key] ?? ''}
-                onChange={(value) => handleKeyChange(key, value)}
-                onFocus={() => setActiveFieldKey(key)}
-              />
-            ))}
+          <div className="grid flex-1 auto-rows-min grid-cols-1 gap-3 overflow-y-auto p-4 md:grid-cols-2 xl:grid-cols-3">
+            {keys.map((key) => {
+              const templateContext: TemplateContext = {
+                ...currentImage.keys,
+                global: globalVariables,
+                exif: currentImage.exifData,
+                utility: {
+                  extension: currentExtension,
+                  index: safeCurrentIndex,
+                },
+              };
+
+              return (
+                <FieldInput
+                  key={key}
+                  fieldKey={key}
+                  value={currentImage.keys[key] ?? ''}
+                  onChange={(value) => handleKeyChange(key, value)}
+                  onFocus={() => setActiveFieldKey(key)}
+                  template={template}
+                  templateContext={templateContext}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
@@ -231,6 +251,14 @@ export function FillOutTab() {
           extension: currentExtension,
           index: safeCurrentIndex,
         }}
+      />
+
+      {/* Image viewer modal */}
+      <ImageViewer
+        imageUrl={imageUrl}
+        imageName={currentImage.name}
+        isOpen={isImageViewerOpen}
+        onClose={() => setIsImageViewerOpen(false)}
       />
     </div>
   );

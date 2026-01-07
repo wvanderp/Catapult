@@ -45,7 +45,7 @@ export function ImageCarousel({ images, currentIndex, onSelectImage, getCompleti
     return (
         <div
             ref={carouselReference}
-            className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-zinc-800 scrollbar-thumb-zinc-600"
+            className="flex gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-track-zinc-800 scrollbar-thumb-zinc-600"
         >
             {images.map((image, index) => {
                 const imageUrl = `data:${image.mimeType};base64,${image.file}`;

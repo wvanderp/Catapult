@@ -5,7 +5,9 @@ import { useAuthStore } from "../store/authStore";
 const CLIENT_ID = import.meta.env.VITE_WIKIMEDIA_CLIENT_ID! as string;
 
 // Optional: Direct access token from environment variable (skips OAuth flow)
-const ENV_ACCESS_TOKEN = import.meta.env.VITE_ACCESS_TOKEN as string | undefined;
+const ENV_ACCESS_TOKEN = import.meta.env.VITE_ACCESS_TOKEN as
+  | string
+  | undefined;
 
 // OAuth 2.0 scopes should be space-separated
 // See: https://www.mediawiki.org/wiki/OAuth/For_Admins for grant names
@@ -27,47 +29,43 @@ const REDIRECT_URI = `${globalThis.location.origin}/catapult/auth/callback`;
 const AUTH_BASE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2";
 const API_URL = "https://commons.wikimedia.org/w/api.php";
 
-  /**
-   * Decode JWT token to extract and log permissions/claims
-   */
-  function parseAndLogJWT(token: string) {
-    try {
-      // JWT format: header.payload.signature
-      const parts = token.split(".");
-      if (parts.length !== 3) {
-        console.error(
-          "[parseAndLogJWT] Invalid JWT format: expected 3 parts, got",
-          parts.length
-        );
-        return;
-      }
-
-      // Decode the payload (second part)
-      // Add padding if needed for base64 decoding
-      const payload = parts[1];
-      const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-      const decoded = JSON.parse(atob(padded));
-
-      console.log("[parseAndLogJWT] JWT Claims:", {
-        iss: decoded.iss,
-        sub: decoded.sub,
-        aud: decoded.aud,
-        exp: decoded.exp
-          ? new Date(decoded.exp * 1000).toISOString()
-          : undefined,
-        iat: decoded.iat
-          ? new Date(decoded.iat * 1000).toISOString()
-          : undefined,
-        scopes: decoded.scope || decoded.scopes || "N/A",
-        grants: decoded.grants || "N/A",
-      });
-
-      return decoded;
-    } catch (error) {
-      console.error("[parseAndLogJWT] Failed to parse JWT:", error);
+/**
+ * Decode JWT token to extract and log permissions/claims
+ */
+function parseAndLogJWT(token: string) {
+  try {
+    // JWT format: header.payload.signature
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      console.error(
+        "[parseAndLogJWT] Invalid JWT format: expected 3 parts, got",
+        parts.length
+      );
       return;
     }
+
+    // Decode the payload (second part)
+    // Add padding if needed for base64 decoding
+    const payload = parts[1];
+    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
+    const decoded = JSON.parse(atob(padded));
+
+    console.log("[parseAndLogJWT] JWT Claims:", {
+      iss: decoded.iss,
+      sub: decoded.sub,
+      aud: decoded.aud,
+      exp: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : undefined,
+      iat: decoded.iat ? new Date(decoded.iat * 1000).toISOString() : undefined,
+      scopes: decoded.scope || decoded.scopes || "N/A",
+      grants: decoded.grants || "N/A",
+    });
+
+    return decoded;
+  } catch (error) {
+    console.error("[parseAndLogJWT] Failed to parse JWT:", error);
+    return;
   }
+}
 
 export interface UploadWarning {
   type:
@@ -133,9 +131,13 @@ export function useWikimediaCommons() {
       );
 
       try {
-        const response = await axios.post(`${AUTH_BASE_URL}/access_token`, body, {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        });
+        const response = await axios.post(
+          `${AUTH_BASE_URL}/access_token`,
+          body,
+          {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          }
+        );
 
         if (response.status === 200) {
           const data = response.data;
@@ -176,16 +178,19 @@ export function useWikimediaCommons() {
       console.log(
         "[fetchUserInfo] Attempting to fetch profile from OAuth2 resource endpoint"
       );
-      const profileResponse = await axios.get(`${AUTH_BASE_URL}/resource/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const profileResponse = await axios.get(
+        `${AUTH_BASE_URL}/resource/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (profileResponse.status === 200) {
         const profile = profileResponse.data;
         console.log("[fetchUserInfo] OAuth2 profile response:", profile);
-        
+
         // Extract name from profile with fallbacks
         function extractName(p: Record<string, unknown>): string | undefined {
           if (typeof p?.username === "string") return p.username;
@@ -340,7 +345,12 @@ export function useWikimediaCommons() {
     const token = await getValidAccessToken();
     if (!token) {
       console.log("[checkAuth] No valid token, returning unauthenticated");
-      return { authenticated: false, username: undefined, rights: [], groups: [] };
+      return {
+        authenticated: false,
+        username: undefined,
+        rights: [],
+        groups: [],
+      };
     }
 
     const parameters = new URLSearchParams({
@@ -470,14 +480,17 @@ export function useWikimediaCommons() {
       crossorigin: "",
     }).toString();
 
-
     const form = new FormData();
     form.append("filename", filename);
     form.append("text", text); // Page content
     form.append("token", csrfToken);
 
     console.log("[uploadFile] token:", csrfToken);
-    console.log("[uploadFile] Uploading file with parameters:", url.toString(), JSON.stringify(form));
+    console.log(
+      "[uploadFile] Uploading file with parameters:",
+      url.toString(),
+      JSON.stringify(form)
+    );
 
     // Only ignore warnings if explicitly requested (e.g., user confirmed to overwrite)
     // Per plan: "Don't blindly ignorewarnings=1. Handle the warning response and rename or dedupe."
