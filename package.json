@@ -1,8 +1,18 @@
 {
   "name": "catapult",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
+  "author": "wvanderp",
+  "description": "A modern, streamlined tool for batch uploading images to Wikimedia Commons",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wvanderp/commons-uploader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wvanderp/commons-uploader/issues"
+  },
+  "homepage": "https://wvanderp.github.io/Catapult",
   "scripts": {
     "start": "vite",
     "dev": "npm run start",
