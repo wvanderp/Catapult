@@ -44,9 +44,9 @@ export function FieldInput({ fieldKey, value, onChange, onFocus, templateContext
                 className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={fieldKey}
             />
-            {preview && (
-                <div className="px-3 py-2 text-xs text-gray-500 break-words">
-                    {preview}
+            {templateContext && (
+                <div className="min-h-[2rem] px-3 py-2 text-xs text-gray-500 break-words">
+                    {preview || '\u00A0'}
                 </div>
             )}
         </div>
