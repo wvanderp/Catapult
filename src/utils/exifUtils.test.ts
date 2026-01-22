@@ -155,6 +155,7 @@ describe("formatExifDate", () => {
   });
 
   it("should return undefined for undefined", () => {
+    // @ts-expect-error Testing with no arguments
     const result = formatExifDate();
     expect(result).toBeUndefined();
   });
@@ -209,6 +210,7 @@ describe("formatExifDateOnly", () => {
   });
 
   it("should return undefined for undefined", () => {
+    // @ts-expect-error Testing with no arguments
     const result = formatExifDateOnly();
     expect(result).toBeUndefined();
   });
@@ -256,6 +258,7 @@ describe("formatExifDateTime", () => {
   });
 
   it("should return undefined for undefined", () => {
+    // @ts-expect-error Testing with no arguments
     const result = formatExifDateTime();
     expect(result).toBeUndefined();
   });

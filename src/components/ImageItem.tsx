@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useImageSetStore } from '../store/imageSetStore';
 import { extractTemplateKeys } from '../utils/templateUtils';
+import { useImageUrl } from '../hooks/useImageData';
 
 interface ImageItemProperties {
     id: string;
@@ -23,8 +24,8 @@ export function ImageItem({ id }: ImageItemProperties) {
 
     const keys = useMemo(() => extractTemplateKeys(titleTemplate + ' ' + template), [titleTemplate, template]);
 
-    // Compute imageUrl directly from the image data
-    const imageUrl = image?.file ? `data:${image.mimeType};base64,${image.file}` : '';
+    // Get the image URL from the IndexedDB storage
+    const { imageUrl } = useImageUrl(id);
 
     const handleKeyChange = (key: string, value: string) => {
         updateImageKeys(id, {
