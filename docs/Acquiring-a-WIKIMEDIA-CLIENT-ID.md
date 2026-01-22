@@ -11,7 +11,7 @@ Make sure that the settings are like:
 most importantly the Redirect URI should be set to:
 
 ```url
-http://localhost:5173/catapult/auth/callback
+http://localhost:5173/Catapult/auth/callback
 ```
 
 and the key need to grant access to:

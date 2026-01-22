@@ -68,7 +68,7 @@ const routeTree = rootRoute.addChildren([
 
 const router = createRouter({
   routeTree,
-  basepath: '/catapult',
+  basepath: '/Catapult',
 })
 
 declare module '@tanstack/react-router' {

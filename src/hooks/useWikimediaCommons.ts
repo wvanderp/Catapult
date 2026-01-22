@@ -26,7 +26,7 @@ const OAUTH_SCOPES = [
 // Construct redirect URI based on current location to support both local dev and production
 // Assuming the app is served at /catapult/ or root.
 // We need to match what is registered in Wikimedia.
-const REDIRECT_URI = `${globalThis.location.origin}/catapult/auth/callback`;
+const REDIRECT_URI = `${globalThis.location.origin}/Catapult/auth/callback`;
 const AUTH_BASE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2";
 const API_URL = "https://commons.wikimedia.org/w/api.php";
 
