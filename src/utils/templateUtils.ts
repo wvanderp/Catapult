@@ -1,3 +1,10 @@
+/**
+ * Extracts all template variable keys from a template string.
+ * Looks for keys enclosed in <<<key>>> delimiters.
+ *
+ * @param template - Template string to extract keys from
+ * @returns Array of unique key strings found in the template
+ */
 export function extractTemplateKeys(template: string): string[] {
   const regex = /<<<(.*?)>>>/g;
   const keys = new Set<string>();
@@ -13,13 +20,13 @@ export function extractTemplateKeys(template: string): string[] {
 /**
  * Get a nested value from an object using dot notation
  *
- * @param obj - The object to get the value from
+ * @param object - The object to get the value from
  * @param path - The dot-separated path to the value (e.g., "exif.DateTimeOriginal")
  * @returns The value at the path, or undefined if not found
  */
 function getNestedValue(
   object: Record<string, unknown>,
-  path: string
+  path: string,
 ): unknown {
   const parts = path.split(".");
   let current: unknown = object;
@@ -46,8 +53,9 @@ function getNestedValue(
  * - `global`: Global variables that apply to all images (accessed via <<<global.fieldName>>>)
  * - `utility`: Utility information about the file (accessed via <<<utility.fieldName>>>)
  *   - `extension`: File extension without the dot (e.g., 'jpg', 'png')
- *   - `index`: Index of the file in the upload queue (0-based)
- *   - `date`: Formatted date from EXIF data in Wikimedia Commons format (YYYY-MM-DD HH:mm)
+ *   - `index`: Index of the file in the upload queue (1-based)
+ *   - `date`: Formatted date from EXIF data (YYYY-MM-DD)
+ *   - `dateTime`: Formatted datetime from EXIF data (YYYY-MM-DD HH:mm)
  * - Root-level keys: Per-image/local keys for substitution (accessed via <<<keyName>>>)
  *
  * Priority for non-prefixed keys: local (root) > global (implicit fallback)
@@ -59,6 +67,7 @@ export interface TemplateContext {
     extension: string;
     index: number;
     date?: string;
+    dateTime?: string;
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -87,7 +96,7 @@ export interface TemplateContext {
 export function applyTemplate(
   template: string,
   context: TemplateContext,
-  maxIterations: number = 10
+  maxIterations: number = 10,
 ): string {
   const regex = /<<<(.*?)>>>/g;
   const MISSING_PLACEHOLDER = "<<<missing>>>";
@@ -109,10 +118,10 @@ export function applyTemplate(
       // Use dynamic nested lookup for any dot-notation path
       const value = getNestedValue(
         context as Record<string, unknown>,
-        trimmedKey
+        trimmedKey,
       );
       if (value !== undefined && value !== null && value !== "") {
-        return String(value);
+        return String(value).trim();
       }
 
       // On the last iteration, show missing placeholder

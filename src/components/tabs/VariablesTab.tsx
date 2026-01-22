@@ -4,6 +4,17 @@ import { useImageSetStore } from '../../store/imageSetStore';
 import { useSettingsStore, INITIAL_TEMPLATE, INITIAL_TITLE_TEMPLATE } from '../../store/settingsStore';
 import { extractTemplateKeys } from '../../utils/templateUtils';
 
+/**
+ * VariablesTab allows users to configure templates and global variables.
+ * Users can define:
+ * - Title template for filenames
+ * - Description template for image descriptions
+ * - Global variables that apply to all images
+ *
+ * Displays warnings if no images are uploaded and shows preview of global variables.
+ * 
+ * @returns The variables tab component
+ */
 export function VariablesTab() {
   const template = useImageSetStore((state) => state.imageSet.template);
   const setTemplate = useImageSetStore((state) => state.setTemplate);
@@ -23,6 +34,12 @@ export function VariablesTab() {
   const templateKeys = useMemo(() => {
     return extractTemplateKeys(titleTemplate + ' ' + template);
   }, [titleTemplate, template]);
+
+  // Filter out utility variables from global variables section
+  // (utility.* variables are auto-generated per image and shouldn't have global defaults)
+  const globalSettableKeys = useMemo(() => {
+    return templateKeys.filter((key) => !key.startsWith('utility.'));
+  }, [templateKeys]);
 
   return (
     <div className="space-y-8">
@@ -109,7 +126,7 @@ export function VariablesTab() {
       </section>
 
       {/* Global Variables */}
-      {templateKeys.length > 0 && (
+      {globalSettableKeys.length > 0 && (
         <section className="space-y-4 rounded-xl bg-zinc-800/50 p-6">
           <div>
             <h3 className="mb-1 text-lg font-medium text-white">Global Variables</h3>
@@ -118,7 +135,7 @@ export function VariablesTab() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {templateKeys.map((key) => {
+            {globalSettableKeys.map((key) => {
               const hasDefault = key in defaultGlobalVariables;
               const currentValue = globalVariables[key] || '';
               const defaultValue = defaultGlobalVariables[key] || '';

@@ -26,10 +26,9 @@ const FORBIDDEN_CHARS: Record<string, string> = {
  * 5. Capitalizes the first character (Title::capitalize behavior for NS_FILE)
  *
  * This ensures the filename passes MediaWiki's checkBadFileName validation.
- *
+ * 
  * @param filename - The original filename to normalize
  * @returns The normalized filename that will pass MediaWiki validation
- *
  * @example
  * normalizeMediaWikiFilename("my image.jpg") // "My_image.jpg"
  * normalizeMediaWikiFilename("photo 12:30:45.png") // "Photo_12-30-45.png"
@@ -50,17 +49,17 @@ export function normalizeMediaWikiFilename(filename: string): string {
   normalized = normalized.replaceAll(" ", "_");
 
   // Collapse multiple consecutive underscores into one
-  normalized = normalized.replace(/_+/g, "_");
+  normalized = normalized.replaceAll(/_+/g, "_");
 
   // Trim leading and trailing underscores (but preserve the extension)
   // Split into name and extension first
   const lastDotIndex = normalized.lastIndexOf(".");
   if (lastDotIndex > 0) {
     const name = normalized.slice(0, lastDotIndex);
-    const ext = normalized.slice(lastDotIndex);
-    normalized = name.replace(/^_+|_+$/g, "") + ext;
+    const extension = normalized.slice(lastDotIndex);
+    normalized = name.replaceAll(/^_+|_+$/g, "") + extension;
   } else {
-    normalized = normalized.replace(/^_+|_+$/g, "");
+    normalized = normalized.replaceAll(/^_+|_+$/g, "");
   }
 
   // Capitalize the first character (MediaWiki Title::capitalize behavior)

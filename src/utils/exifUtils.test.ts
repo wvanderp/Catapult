@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { base64ToFile, extractExifData, formatExifDate } from "./exifUtils";
+import {
+  base64ToFile,
+  extractExifData,
+  formatExifDate,
+  formatExifDateOnly,
+  formatExifDateTime,
+} from "./exifUtils";
 
 describe("base64ToFile", () => {
   it("should convert a base64 string to a File object", () => {
@@ -63,7 +69,7 @@ describe("base64ToFile", () => {
 describe("extractExifData", () => {
   const WIKIMEDIA_IMAGE_URL =
     "https://commons.wikimedia.org/wiki/Special:FilePath/ParkShuttle_autonomous_bus_Capelle_aan_den_IJssel_-_2024-03-11.jpg";
-  let testFile: File | null = null;
+  let testFile: File | undefined;
 
   beforeAll(async () => {
     // Download sample image from Wikimedia Commons for each test
@@ -143,12 +149,13 @@ describe("formatExifDate", () => {
   });
 
   it("should return undefined for null", () => {
-    const result = formatExifDate(null);
+    // @ts-expect-error Testing with no arguments
+    const result = formatExifDate();
     expect(result).toBeUndefined();
   });
 
   it("should return undefined for undefined", () => {
-    const result = formatExifDate(undefined);
+    const result = formatExifDate();
     expect(result).toBeUndefined();
   });
 
@@ -158,7 +165,7 @@ describe("formatExifDate", () => {
   });
 
   it("should return undefined for non-date types", () => {
-    const result = formatExifDate(12345);
+    const result = formatExifDate(12_345);
     expect(result).toBeUndefined();
   });
 
@@ -173,5 +180,99 @@ describe("formatExifDate", () => {
       "Sun Mar 02 2025 12:52:32 GMT+0100 (Midden-Europese standaardtijd)";
     const result = formatExifDate(exifDate);
     expect(result).toBe("2025-03-02 12:52");
+  });
+});
+
+describe("formatExifDateOnly", () => {
+  it("should format a Date object to YYYY-MM-DD", () => {
+    const date = new Date("2025-03-02T12:52:32+01:00");
+    const result = formatExifDateOnly(date);
+    expect(result).toBe("2025-03-02");
+  });
+
+  it("should format EXIF string format with colons to YYYY-MM-DD", () => {
+    const exifDate = "2024:01:15 10:30:00";
+    const result = formatExifDateOnly(exifDate);
+    expect(result).toBe("2024-01-15");
+  });
+
+  it("should format standard date string to YYYY-MM-DD", () => {
+    const dateString = "2024-06-15 14:22:00";
+    const result = formatExifDateOnly(dateString);
+    expect(result).toBe("2024-06-15");
+  });
+
+  it("should return undefined for null", () => {
+    // @ts-expect-error Testing with no arguments
+    const result = formatExifDateOnly();
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for undefined", () => {
+    const result = formatExifDateOnly();
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for invalid date string", () => {
+    const result = formatExifDateOnly("invalid date");
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for non-date types", () => {
+    const result = formatExifDateOnly(12_345);
+    expect(result).toBeUndefined();
+  });
+
+  it("should pad single-digit months and days", () => {
+    const date = new Date("2024-03-05T08:05:00");
+    const result = formatExifDateOnly(date);
+    expect(result).toBe("2024-03-05");
+  });
+});
+
+describe("formatExifDateTime", () => {
+  it("should format a Date object to YYYY-MM-DD HH:mm", () => {
+    const date = new Date("2025-03-02T12:52:32+01:00");
+    const result = formatExifDateTime(date);
+    expect(result).toBe("2025-03-02 12:52");
+  });
+
+  it("should format EXIF string format with colons to YYYY-MM-DD HH:mm", () => {
+    const exifDate = "2024:01:15 10:30:00";
+    const result = formatExifDateTime(exifDate);
+    expect(result).toBe("2024-01-15 10:30");
+  });
+
+  it("should format standard date string to YYYY-MM-DD HH:mm", () => {
+    const dateString = "2024-06-15 14:22:00";
+    const result = formatExifDateTime(dateString);
+    expect(result).toBe("2024-06-15 14:22");
+  });
+
+  it("should return undefined for null", () => {
+    // @ts-expect-error Testing with no arguments
+    const result = formatExifDateTime();
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for undefined", () => {
+    const result = formatExifDateTime();
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for invalid date string", () => {
+    const result = formatExifDateTime("invalid date");
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for non-date types", () => {
+    const result = formatExifDateTime(12_345);
+    expect(result).toBeUndefined();
+  });
+
+  it("should pad single-digit months and days and time components", () => {
+    const date = new Date("2024-03-05T08:05:00");
+    const result = formatExifDateTime(date);
+    expect(result).toBe("2024-03-05 08:05");
   });
 });

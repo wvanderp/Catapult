@@ -9,6 +9,18 @@ interface FieldInputProps {
     templateContext?: TemplateContext;
 }
 
+/**
+ * FieldInput renders an input field with a label and optional template preview.
+ * When a template context is provided, displays a live preview of the template with the current value.
+ *
+ * @param props - Component props
+ * @param props.fieldKey - The key/label for the field
+ * @param props.value - Current field value
+ * @param props.onChange - Callback when value changes
+ * @param props.onFocus - Optional callback when field is focused
+ * @param props.templateContext - Optional context for template preview
+ * @returns The field input component
+ */
 export function FieldInput({ fieldKey, value, onChange, onFocus, templateContext }: FieldInputProps) {
     let preview = '';
     if (templateContext && value) {

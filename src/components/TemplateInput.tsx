@@ -1,5 +1,12 @@
 import { useImageSetStore } from '../store/imageSetStore';
 
+/**
+ * TemplateInput allows users to define the description template for all images.
+ * The template uses triple angle brackets (<<<variable>>>) for variable placeholders.
+ * Users will be prompted to fill in values for these variables for each image.
+ *
+ * @returns The template input component
+ */
 export function TemplateInput() {
   const template = useImageSetStore((state) => state.imageSet.template);
   const setTemplate = useImageSetStore((state) => state.setTemplate);

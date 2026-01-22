@@ -1,160 +1,308 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useImageSetStore, type Image } from '../../store/imageSetStore';
 import { applyTemplate } from '../../utils/templateUtils';
 import { createUtilityContext } from '../../utils/utilityContext';
+import { getImageAsFile } from '../../utils/imageBlobStorage';
+import { useImageUrl } from '../../hooks/useImageData';
 
 import { useWikimediaCommons, type UploadWarning } from '../../hooks/useWikimediaCommons';
 
 type UploadStatus = 'pending' | 'uploading' | 'success' | 'error' | 'warning';
 
+/**
+ * Determine the progress bar color based on upload results.
+ *
+ * @param errorCount - Number of images with errors
+ * @param warningCount - Number of images with warnings
+ * @returns CSS color class for the progress bar
+ */
 function getProgressBarColor(errorCount: number, warningCount: number): string {
   if (errorCount > 0) return 'bg-yellow-500';
   if (warningCount > 0) return 'bg-orange-500';
   return 'bg-green-500';
 }
 
-function getUploadStatusColor(status: UploadStatus): string {
-  switch (status) {
-    case 'pending': {
-      return 'bg-zinc-600 text-gray-300';
-    }
-    case 'uploading': {
-      return 'bg-blue-600 text-white';
-    }
-    case 'success': {
-      return 'bg-green-600 text-white';
-    }
-    case 'warning': {
-      return 'bg-orange-600 text-white';
-    }
-    case 'error': {
-      return 'bg-red-600 text-white';
-    }
-  }
-}
-
 interface ReviewItemProperties {
   image: Image;
   title: string;
   description: string;
+  uploadStatus?: UploadStatus;
   onToggleReviewed: () => void;
 }
 
-function ReviewItem({ image, title, description, onToggleReviewed }: ReviewItemProperties) {
-  // Always show description preview — do not hide behind a toggle
-  const imageUrl = `data:${image.mimeType};base64,${image.file}`;
+const MISSING_PLACEHOLDER = '<<<missing>>>';
 
-  // Detect missing values shown as our placeholder
-  const MISSING_PLACEHOLDER = '<<<missing>>>';
-  const hasUnfilledVariables = new RegExp(MISSING_PLACEHOLDER).test(title) || new RegExp(MISSING_PLACEHOLDER).test(description);
+/**
+ * Render text with highlighted missing placeholders.
+ * Wraps <<<missing>>> placeholders in styled spans for visual emphasis.
+ *
+ * @param text - The text to render with potential missing placeholders
+ * @returns React nodes with highlighted missing placeholders
+ */
+function renderWithHighlights(text: string): React.ReactNode {
+  if (!text) return text;
+  const parts = text.split(MISSING_PLACEHOLDER);
+  return parts.flatMap((part, index) => {
+    const elements: (string | React.ReactNode)[] = [part];
+    if (index < parts.length - 1) {
+      elements.push(
+        <span key={index} className="rounded bg-zinc-800 px-1 font-mono text-red-400">
+          {MISSING_PLACEHOLDER}
+        </span>,
+      );
+    }
+    return elements;
+  });
+}
 
-  // Highlight the missing placeholders in the title and description render output
-  function renderWithHighlights(text: string) {
-    if (!text) return text;
-    const parts = text.split(MISSING_PLACEHOLDER);
-    return parts.flatMap((part, index) => {
-      const elements: (string | React.ReactNode)[] = [part];
-      if (index < parts.length - 1) {
-        elements.push(
-          <span key={index} className="rounded bg-zinc-800 px-1 font-mono text-red-400">
-            {MISSING_PLACEHOLDER}
-          </span>,
-        );
-      }
-      return elements;
-    });
+interface UploadStatusIndicatorProperties {
+  status?: UploadStatus;
+  isReviewed: boolean;
+  onToggleReviewed: () => void;
+}
+
+/**
+ * UploadStatusIndicator displays the current upload status or review checkbox.
+ * Shows different UI based on upload status:
+ * - Success: green checkmark with "Uploaded" text
+ * - Uploading: spinning loader with "Uploading..." text
+ * - Pending: "Waiting..." text
+ * - Otherwise: checkbox to mark image as ready for upload
+ *
+ * @param props - The props object
+ * @param props.status - Current upload status
+ * @param props.isReviewed - Whether the image is marked as reviewed/ready
+ * @param props.onToggleReviewed - Callback to toggle the reviewed state
+ * @returns The upload status indicator component
+ */
+function UploadStatusIndicator({ status, isReviewed, onToggleReviewed }: UploadStatusIndicatorProperties) {
+  if (status === 'success') {
+    return (
+      <span className="flex items-center gap-1.5 text-sm font-medium text-green-400">
+        <svg className="size-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        </svg>
+        Uploaded
+      </span>
+    );
+  }
+
+  if (status === 'uploading') {
+    return (
+      <span className="flex items-center gap-2 text-sm font-medium text-blue-400">
+        <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        Uploading...
+      </span>
+    );
+  }
+
+  if (status === 'pending') {
+    return <span className="text-sm font-medium text-gray-400">Waiting...</span>;
   }
 
   return (
-    <div className={`overflow-hidden rounded-xl border-2 bg-zinc-800/50 transition-colors ${image.reviewed ? 'border-green-600' : (hasUnfilledVariables ? 'border-yellow-600' : 'border-transparent')
-      }`}>
+    <label className="flex cursor-pointer items-center gap-2">
+      <input
+        type="checkbox"
+        checked={isReviewed}
+        onChange={onToggleReviewed}
+        className="size-5 rounded border-zinc-600 bg-zinc-800 text-green-600 focus:ring-green-500"
+      />
+      <span className={`text-sm font-medium ${isReviewed ? 'text-green-400' : 'text-gray-400'}`}>
+        {isReviewed ? 'Ready' : 'Mark ready'}
+      </span>
+    </label>
+  );
+}
+
+/**
+ * ReviewItem displays a single image's review card with:
+ * - Thumbnail preview
+ * - Filename and Commons title
+ * - Template preview with expandable description
+ * - Upload status indicator
+ * - Success banner with link to Commons (when uploaded)
+ * - Warning indicator for unfilled variables
+ *
+ * @param props - The props object
+ * @param props.image - The image data
+ * @param props.title - The computed title for the image
+ * @param props.description - The computed description from template
+ * @param props.uploadStatus - Current upload status
+ * @param props.onToggleReviewed - Callback to toggle reviewed state
+ * @returns The review item component
+ */
+function ReviewItem({ image, title, description, uploadStatus, onToggleReviewed }: ReviewItemProperties) {
+  const { imageUrl, isLoading } = useImageUrl(image.id);
+
+  const hasUnfilledVariables = title.includes(MISSING_PLACEHOLDER) || description.includes(MISSING_PLACEHOLDER);
+
+  const isUploaded = uploadStatus === 'success';
+
+  /**
+   * Determine the border color based on upload status and review state.
+   *
+   * @returns CSS border color class
+   */
+  function getBorderColor(): string {
+    if (uploadStatus === 'uploading') return 'border-blue-500';
+    if (isUploaded) return 'border-green-500';
+    if (image.reviewed) return 'border-green-600/50';
+    if (hasUnfilledVariables) return 'border-yellow-600';
+    return 'border-zinc-700';
+  }
+
+  /**
+   * Determine the background color based on upload status.
+   *
+   * @returns CSS background color class
+   */
+  function getBackgroundColor(): string {
+    if (isUploaded) return 'bg-green-900/20';
+    return 'bg-zinc-800/50';
+  }
+
+  return (
+    <div className={`overflow-hidden rounded-xl border ${getBorderColor()} ${getBackgroundColor()} transition-all`}>
+      {/* Success banner for uploaded images */}
+      {isUploaded && image.uploadUrl && (
+        <div className="flex items-center justify-between bg-green-600 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <svg className="size-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="font-medium text-white">Successfully uploaded to Wikimedia Commons</span>
+          </div>
+          <a
+            href={image.uploadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2 font-medium text-white transition-colors hover:bg-white/30"
+          >
+            View on Commons
+            <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      )}
+
       <div className="flex items-start gap-4 p-4">
         {/* Thumbnail */}
-        <div className="size-24 shrink-0 overflow-hidden rounded-lg bg-zinc-900">
-          <img
-            src={imageUrl}
-            alt={image.name}
-            className="size-full object-cover"
-          />
+        <div className="size-20 shrink-0 overflow-hidden rounded-lg bg-zinc-900">
+          {isLoading ? (
+            <div className="flex size-full items-center justify-center">
+              <div className="size-4 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-400" />
+            </div>
+          ) : (
+            <img
+              src={imageUrl}
+              alt={image.name}
+              className="size-full object-cover"
+            />
+          )}
         </div>
 
         {/* Info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="mb-1 text-xs uppercase tracking-wider text-gray-500">File Name</p>
-              <p className="mb-2 truncate text-sm text-gray-400">{image.name}</p>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="flex items-center gap-3">
+                <span className="text-xs uppercase tracking-wider text-gray-500">File</span>
+                <span className="truncate text-sm text-gray-400">{image.name}</span>
+              </div>
 
-              <p className="mb-1 text-xs uppercase tracking-wider text-gray-500">Commons Title</p>
-              <h4 className="break-words font-medium text-white" title={title}>
-                {title ? <>{renderWithHighlights(title)}</> : <span className="italic text-gray-500">No title</span>}
-              </h4>
+              <div>
+                <span className="text-xs uppercase tracking-wider text-gray-500">Commons Title</span>
+                <h4 className="mt-0.5 break-words font-medium text-white" title={title}>
+                  {title ? renderWithHighlights(title) : <span className="italic text-gray-500">No title</span>}
+                </h4>
+              </div>
 
-              {hasUnfilledVariables && (
-                <p className="mt-2 flex items-center gap-1 text-xs text-yellow-400">
-                  ⚠️ Some variables are not filled in (shown as &lt;&lt;&lt;missing&gt;&gt;&gt;)
+              {hasUnfilledVariables && !isUploaded && (
+                <p className="flex items-center gap-1 text-xs text-yellow-400">
+                  ⚠️ Some variables are not filled in
                 </p>
               )}
             </div>
 
-            {/* Review checkbox */}
-            <div className="flex shrink-0 items-center gap-3">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={image.reviewed}
-                  onChange={onToggleReviewed}
-                  className="size-5 rounded border-zinc-600 bg-zinc-800 text-green-600 focus:ring-green-500"
-                />
-                <span className={`text-sm font-medium ${image.reviewed ? 'text-green-400' : 'text-gray-400'}`}>
-                  {image.reviewed ? 'Ready' : 'Mark as ready'}
-                </span>
-              </label>
+            {/* Status / Review checkbox */}
+            <div className="flex shrink-0 items-center">
+              <UploadStatusIndicator
+                status={uploadStatus}
+                isReviewed={image.reviewed}
+                onToggleReviewed={onToggleReviewed}
+              />
             </div>
           </div>
-
-          {/* Description preview is always visible */}
-        </div>
-      </div>
-      {/* Template preview (always visible) */}
-      <div className="border-t border-zinc-700 bg-zinc-900/50">
-        <div className="p-4">
-          <p className="mb-2 text-xs uppercase tracking-wider text-gray-500">Description Template (filled)</p>
-          <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-zinc-700 bg-zinc-900 p-3 font-mono text-sm text-gray-300">
-            {renderWithHighlights(description)}
-          </pre>
         </div>
       </div>
 
+      {/* Template preview */}
+      <div className="border-t border-zinc-700/50 bg-zinc-900/30">
+        <details className="group" open={uploadStatus === 'pending' || uploadStatus === undefined}>
+          <summary className="flex cursor-pointer items-center justify-between px-4 py-2 text-xs uppercase tracking-wider text-gray-500 hover:text-gray-400">
+            <span>Description Template</span>
+            <svg className="size-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div className="px-4 pb-4">
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-zinc-700 bg-zinc-900 p-3 font-mono text-sm text-gray-300">
+              {renderWithHighlights(description)}
+            </pre>
+          </div>
+        </details>
+      </div>
     </div>
   );
 }
 
+/**
+ * ReviewTab provides the final review and upload interface.
+ * Features:
+ * - Review all images with their computed titles and descriptions
+ * - Mark images as ready for upload
+ * - Bulk upload to Wikimedia Commons
+ * - Upload progress tracking
+ * - Warning and error handling
+ * - Success status with links to uploaded files
+ * - Option to start new batch after upload
+ *
+ * Handles authentication, CSRF token retrieval, and upload workflow.
+ *
+ * @returns The review tab component
+ */
 export function ReviewTab() {
   const images = useImageSetStore((state) => state.imageSet.images);
+  const imageOrder = useImageSetStore((state) => state.imageSet.imageOrder);
   const template = useImageSetStore((state) => state.imageSet.template);
   const titleTemplate = useImageSetStore((state) => state.imageSet.titleTemplate);
   const globalVariables = useImageSetStore((state) => state.imageSet.globalVariables);
   const setImageReviewed = useImageSetStore((state) => state.setImageReviewed);
+  const setImageUploaded = useImageSetStore((state) => state.setImageUploaded);
+  const setImageUploadStatus = useImageSetStore((state) => state.setImageUploadStatus);
   const clearAllImages = useImageSetStore((state) => state.clearAllImages);
   const navigate = useNavigate();
 
   const { uploadFile, isAuthenticated } = useWikimediaCommons();
 
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, 'pending' | 'uploading' | 'success' | 'error' | 'warning'>>({});
-  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
   const [uploadWarnings, setUploadWarnings] = useState<Record<string, { warnings: UploadWarning[]; filekey?: string; file: File; title: string; description: string }>>({});
 
-  const imageIds = Object.keys(images);
+  // Use imageOrder for correct ordering, filtering to only include existing images
+  // Falls back to Object.keys(images) for backwards compatibility with old data
+  const imageKeys = Object.keys(images);
+  const imageIds = imageOrder.length > 0
+    ? imageOrder.filter(id => id in images)
+    : imageKeys;
 
   const reviewedCount = Object.values(images).filter((img) => img.reviewed).length;
   const allReviewed = reviewedCount === imageIds.length && imageIds.length > 0;
-
-  useEffect(() => {
-    console.error(uploadErrors);
-  }, [uploadErrors]);
 
   // Generate titles and descriptions for all images
   const processedImages = useMemo(() => {
@@ -183,38 +331,37 @@ export function ReviewTab() {
     }
 
     setIsUploading(true);
-    const initialProgress: Record<string, 'pending' | 'uploading' | 'success' | 'error' | 'warning'> = {};
+    // Set all reviewed images to pending status
     for (const id of imageIds) {
       if (images[id].reviewed) {
-        initialProgress[id] = 'pending';
+        setImageUploadStatus(id, 'pending');
       }
     }
-    setUploadProgress(initialProgress);
-    setUploadErrors({});
     setUploadWarnings({});
 
     for (const { id, image, title, description } of processedImages) {
       if (!image.reviewed) continue;
 
-      setUploadProgress((previous) => ({ ...previous, [id]: 'uploading' }));
+      setImageUploadStatus(id, 'uploading');
 
       try {
-        // Convert base64 to File
-        const byteCharacters = atob(image.file);
-        const byteNumbers = Array.from({ length: byteCharacters.length }, (_, index) =>
-          byteCharacters.codePointAt(index) ?? 0
-        );
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: image.mimeType });
-        const file = new File([blob], image.name, { type: image.mimeType });
+        // Get the File from IndexedDB
+        const file = await getImageAsFile(image.id, image.name);
+        if (!file) {
+          setImageUploadStatus(id, 'error', 'Image data not found');
+          continue;
+        }
 
         const result = await uploadFile(file, title, description);
 
         if (result.success) {
-          setUploadProgress((previous) => ({ ...previous, [id]: 'success' }));
+          const uploadUrl = result.filename
+            ? `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(result.filename)}`
+            : undefined;
+          setImageUploaded(id, true, uploadUrl);
         } else if (result.warnings && result.warnings.length > 0) {
           // File has warnings - let user decide
-          setUploadProgress((previous) => ({ ...previous, [id]: 'warning' }));
+          setImageUploadStatus(id, 'warning');
           setUploadWarnings((previous) => ({
             ...previous,
             [id]: {
@@ -226,12 +373,10 @@ export function ReviewTab() {
             },
           }));
         } else {
-          setUploadProgress((previous) => ({ ...previous, [id]: 'error' }));
-          setUploadErrors((previous) => ({ ...previous, [id]: result.error || 'Upload failed' }));
+          setImageUploadStatus(id, 'error', result.error || 'Upload failed');
         }
       } catch (error) {
-        setUploadProgress((previous) => ({ ...previous, [id]: 'error' }));
-        setUploadErrors((previous) => ({ ...previous, [id]: error instanceof Error ? error.message : 'Upload failed' }));
+        setImageUploadStatus(id, 'error', error instanceof Error ? error.message : 'Upload failed');
       }
     }
 
@@ -242,7 +387,7 @@ export function ReviewTab() {
     const warningData = uploadWarnings[id];
     if (!warningData) return;
 
-    setUploadProgress((previous) => ({ ...previous, [id]: 'uploading' }));
+    setImageUploadStatus(id, 'uploading');
 
     try {
       const result = await uploadFile(
@@ -253,25 +398,25 @@ export function ReviewTab() {
       );
 
       if (result.success) {
-        setUploadProgress((previous) => ({ ...previous, [id]: 'success' }));
+        const uploadUrl = result.filename
+          ? `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(result.filename)}`
+          : undefined;
+        setImageUploaded(id, true, uploadUrl);
         setUploadWarnings((previous) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [id]: _removed, ...rest } = previous;
           return rest;
         });
       } else {
-        setUploadProgress((previous) => ({ ...previous, [id]: 'error' }));
-        setUploadErrors((previous) => ({ ...previous, [id]: result.error || 'Upload failed' }));
+        setImageUploadStatus(id, 'error', result.error || 'Upload failed');
       }
     } catch (error) {
-      setUploadProgress((previous) => ({ ...previous, [id]: 'error' }));
-      setUploadErrors((previous) => ({ ...previous, [id]: error instanceof Error ? error.message : 'Upload failed' }));
+      setImageUploadStatus(id, 'error', error instanceof Error ? error.message : 'Upload failed');
     }
   };
 
   const handleSkipWarning = (id: string) => {
-    setUploadProgress((previous) => ({ ...previous, [id]: 'error' }));
-    setUploadErrors((previous) => ({ ...previous, [id]: 'Skipped due to warnings' }));
+    setImageUploadStatus(id, 'error', 'Skipped due to warnings');
     setUploadWarnings((previous) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [id]: _removed, ...rest } = previous;
@@ -279,11 +424,12 @@ export function ReviewTab() {
     });
   };
 
-  const successCount = Object.values(uploadProgress).filter((s) => s === 'success').length;
-  const errorCount = Object.values(uploadProgress).filter((s) => s === 'error').length;
-  const warningCount = Object.values(uploadProgress).filter((s) => s === 'warning').length;
-  const uploadComplete = Object.keys(uploadProgress).length > 0 &&
-    Object.values(uploadProgress).every((s) => s === 'success' || s === 'error');
+  const imagesWithStatus = Object.values(images).filter((img) => img.uploadStatus);
+  const successCount = imagesWithStatus.filter((img) => img.uploadStatus === 'success').length;
+  const errorCount = imagesWithStatus.filter((img) => img.uploadStatus === 'error').length;
+  const warningCount = imagesWithStatus.filter((img) => img.uploadStatus === 'warning').length;
+  const uploadComplete = imagesWithStatus.length > 0 &&
+    imagesWithStatus.every((img) => img.uploadStatus === 'success' || img.uploadStatus === 'error');
 
   if (imageIds.length === 0) {
     return (
@@ -316,20 +462,12 @@ export function ReviewTab() {
           <div className={`text-lg font-medium ${allReviewed ? 'text-green-400' : 'text-gray-300'}`}>
             {reviewedCount} / {imageIds.length} ready
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => toggleAllReviewed(true)}
-              className="rounded bg-zinc-700 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-zinc-600"
-            >
-              Mark all ready
-            </button>
-            <button
-              onClick={() => toggleAllReviewed(false)}
-              className="rounded bg-zinc-700 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-zinc-600"
-            >
-              Unmark all
-            </button>
-          </div>
+          <button
+            onClick={() => toggleAllReviewed(false)}
+            className="rounded bg-zinc-700 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-zinc-600"
+          >
+            Unmark all
+          </button>
         </div>
 
         {!isAuthenticated && (
@@ -340,7 +478,7 @@ export function ReviewTab() {
       </div>
 
       {/* Upload progress/results */}
-      {Object.keys(uploadProgress).length > 0 && (
+      {imagesWithStatus.length > 0 && (
         <div className="rounded-xl bg-zinc-800/50 p-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="font-medium text-white">Upload Progress</span>
@@ -351,7 +489,7 @@ export function ReviewTab() {
           <div className="h-2 overflow-hidden rounded-full bg-zinc-700">
             <div
               className={`h-full transition-all duration-300 ${getProgressBarColor(errorCount, warningCount)}`}
-              style={{ width: `${((successCount + errorCount) / Object.keys(uploadProgress).length) * 100}%` }}
+              style={{ width: `${((successCount + errorCount) / imagesWithStatus.length) * 100}%` }}
             />
           </div>
           {warningCount > 0 && (
@@ -361,13 +499,12 @@ export function ReviewTab() {
               </p>
             </div>
           )}
-          {uploadComplete && successCount === Object.keys(uploadProgress).length && (
+          {uploadComplete && successCount === imagesWithStatus.length && (
             <div className="mt-4 text-center">
               <p className="mb-3 font-medium text-green-400">All uploads completed successfully! 🎉</p>
               <button
                 onClick={() => {
                   clearAllImages();
-                  setUploadProgress({});
                   navigate({ to: '/upload' });
                 }}
                 className="rounded-lg bg-green-600 px-6 py-2 font-medium text-white transition-colors hover:bg-green-700"
@@ -382,26 +519,17 @@ export function ReviewTab() {
       {/* Image list */}
       <div className="space-y-3">
         {processedImages.map(({ id, image, title, description }) => (
-          <div key={id} className="relative">
+          <div key={id}>
             <ReviewItem
               image={image}
               title={title}
               description={description}
+              uploadStatus={image.uploadStatus}
               onToggleReviewed={() => setImageReviewed(id, !image.reviewed)}
             />
-            {/* Upload status overlay */}
-            {uploadProgress[id] && (
-              <div className={`absolute right-16 top-2 rounded px-2 py-1 text-xs font-medium ${getUploadStatusColor(uploadProgress[id])}`}>
-                {uploadProgress[id] === 'pending' && 'Waiting...'}
-                {uploadProgress[id] === 'uploading' && 'Uploading...'}
-                {uploadProgress[id] === 'success' && '✓ Uploaded'}
-                {uploadProgress[id] === 'warning' && '⚠️ Has warnings'}
-                {uploadProgress[id] === 'error' && `✗ ${uploadErrors[id] || 'Failed'}`}
-              </div>
-            )}
             {/* Warning details and actions */}
-            {uploadProgress[id] === 'warning' && uploadWarnings[id] && (
-              <div className="mt-2 rounded-lg border border-orange-600/50 bg-orange-900/20 p-3">
+            {image.uploadStatus === 'warning' && uploadWarnings[id] && (
+              <div className="mx-4 -mt-px rounded-b-lg border border-t-0 border-orange-600/50 bg-orange-900/20 p-3">
                 <p className="mb-2 text-sm font-medium text-orange-400">Warnings:</p>
                 <ul className="mb-3 space-y-1 text-sm text-orange-300">
                   {uploadWarnings[id].warnings.map((warning, index) => (
@@ -416,17 +544,25 @@ export function ReviewTab() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleForceUpload(id)}
-                    className="rounded bg-orange-600 px-3 py-1 text-sm text-white transition-colors hover:bg-orange-700"
+                    className="rounded bg-orange-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-700"
                   >
                     Upload Anyway
                   </button>
                   <button
                     onClick={() => handleSkipWarning(id)}
-                    className="rounded bg-zinc-600 px-3 py-1 text-sm text-white transition-colors hover:bg-zinc-700"
+                    className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-700"
                   >
                     Skip
                   </button>
                 </div>
+              </div>
+            )}
+            {/* Error display */}
+            {image.uploadStatus === 'error' && image.uploadError && (
+              <div className="mx-4 -mt-px rounded-b-lg border border-t-0 border-red-600/50 bg-red-900/20 p-3">
+                <p className="text-sm text-red-400">
+                  <span className="font-medium">Error:</span> {image.uploadError}
+                </p>
               </div>
             )}
           </div>

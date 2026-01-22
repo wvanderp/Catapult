@@ -119,6 +119,12 @@ export interface ExportedSettings {
   exportedAt: string;
 }
 
+/**
+ * Exports settings state to a serializable format for backup/import.
+ *
+ * @param state - The current settings state to export
+ * @returns Exported settings object with version and timestamp
+ */
 export function exportSettings(state: SettingsState): ExportedSettings {
   return {
     version: 1,
@@ -129,6 +135,12 @@ export function exportSettings(state: SettingsState): ExportedSettings {
   };
 }
 
+/**
+ * Type guard to validate if data matches the ExportedSettings structure.
+ *
+ * @param data - Unknown data to validate
+ * @returns True if data is a valid ExportedSettings object
+ */
 export function isValidExportedSettings(
   data: unknown
 ): data is ExportedSettings {

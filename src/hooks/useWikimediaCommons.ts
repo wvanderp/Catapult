@@ -32,6 +32,9 @@ const API_URL = "https://commons.wikimedia.org/w/api.php";
 
 /**
  * Decode JWT token to extract and log permissions/claims
+ *
+ * @param token - The JWT token string to parse and log
+ * @returns void - Logs the parsed JWT data to console
  */
 function parseAndLogJWT(token: string) {
   try {
@@ -90,6 +93,12 @@ export interface UploadResult {
   filekey?: string;
 }
 
+/**
+ * Hook that provides authentication and API methods for interacting with Wikimedia Commons.
+ * Handles OAuth2 authentication flow, token management, and file upload operations.
+ *
+ * @returns Object containing authentication state and API methods
+ */
 export function useWikimediaCommons() {
   const {
     accessToken,
@@ -103,6 +112,12 @@ export function useWikimediaCommons() {
 
   // ==================== Authentication ====================
 
+  /**
+   * Gets a valid access token, refreshing if necessary.
+   * Falls back to environment token if available.
+   *
+   * @returns Promise resolving to access token string or undefined if not authenticated
+   */
   async function getValidAccessToken() {
     // If environment token is available, use it directly (skips OAuth)
     if (ENV_ACCESS_TOKEN) {
@@ -173,6 +188,12 @@ export function useWikimediaCommons() {
     return;
   }
 
+  /**
+   * Fetches user information from Wikimedia Commons using an access token.
+   * Updates the userName in the auth store.
+   *
+   * @param token - The OAuth access token
+   */
   async function fetchUserInfo(token: string) {
     try {
       // Prefer the OAuth2 resource profile endpoint (most reliable for identity).
@@ -193,6 +214,12 @@ export function useWikimediaCommons() {
         console.log("[fetchUserInfo] OAuth2 profile response:", profile);
 
         // Extract name from profile with fallbacks
+        /**
+         * Extracts the username from a profile object with various fallback fields.
+         *
+         * @param p - The profile object containing user data
+         * @returns The username string or undefined if not found
+         */
         function extractName(p: Record<string, unknown>): string | undefined {
           if (typeof p?.username === "string") return p.username;
           if (typeof p?.user_name === "string") return p.user_name;
@@ -256,6 +283,9 @@ export function useWikimediaCommons() {
     }
   }
 
+  /**
+   *
+   */
   async function handleCallback() {
     const url = new URL(globalThis.location.href);
     const code = url.searchParams.get("code");
@@ -335,6 +365,9 @@ export function useWikimediaCommons() {
     }
   }
 
+  /**
+   * Logs the user out by clearing all authentication tokens from storage.
+   */
   function logout() {
     clearTokens();
   }
@@ -342,6 +375,12 @@ export function useWikimediaCommons() {
   // ==================== Commons API ====================
 
   // Check if we're properly authenticated on Commons with full debug info
+  /**
+   * Checks authentication status with Wikimedia Commons and retrieves user information.
+   * Returns user rights, groups, and authentication state.
+   *
+   * @returns Promise resolving to authentication status object
+   */
   async function checkAuth() {
     const token = await getValidAccessToken();
     if (!token) {
@@ -408,6 +447,12 @@ export function useWikimediaCommons() {
     };
   }
 
+  /**
+   * Obtains a CSRF token from Wikimedia Commons API.
+   * Required for authenticated write operations like file uploads.
+   *
+   * @returns Promise resolving to the CSRF token string
+   */
   async function getCsrfToken() {
     const token = await getValidAccessToken();
     if (!token) throw new Error("Not authenticated");
@@ -458,6 +503,17 @@ export function useWikimediaCommons() {
     return csrfToken;
   }
 
+  /**
+   * Uploads a file to Wikimedia Commons.
+   *
+   * @param file - The file to upload
+   * @param filename - The target filename on Commons
+   * @param text - The wikitext content for the file description page
+   * @param options - Optional upload settings
+   * @param options.ignorewarnings - Whether to ignore upload warnings
+   * @param options.filekey - Filekey from a previous upload attempt to resume
+   * @returns Promise resolving to upload result with success status and any warnings
+   */
   async function uploadFile(
     file: File,
     filename: string,
@@ -617,6 +673,9 @@ export function useWikimediaCommons() {
 
 /**
  * Parse MediaWiki upload warnings into a structured format
+ *
+ * @param warnings - Raw warnings object from MediaWiki API response
+ * @returns Array of structured warning objects with type and message
  */
 function parseWarnings(warnings: Record<string, unknown>): UploadWarning[] {
   const result: UploadWarning[] = [];
@@ -678,6 +737,9 @@ function parseWarnings(warnings: Record<string, unknown>): UploadWarning[] {
   return result;
 }
 
+/**
+ *
+ */
 async function login() {
   // Skip OAuth flow if using environment token
   if (ENV_ACCESS_TOKEN) {

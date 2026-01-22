@@ -10,10 +10,17 @@ const tabs: { path: TabPath; label: string; description: string }[] = [
   { path: '/review', label: '4. Review', description: 'Upload to Commons' },
 ];
 
+/**
+ * TabNavigation displays the step-by-step navigation tabs for the upload workflow.
+ * Shows badges for image count and review progress.
+ * Highlights the current active tab.
+ * 
+ * @returns The tab navigation component
+ */
 export function TabNavigation() {
   const location = useLocation();
   const images = useImageSetStore((state) => state.imageSet.images);
-  
+
   const imageCount = Object.keys(images).length;
   const reviewedCount = Object.values(images).filter((img) => img.reviewed).length;
 
@@ -23,7 +30,7 @@ export function TabNavigation() {
         <div className="flex space-x-1">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
-            
+
             // Show badge for certain tabs
             let badge: string | undefined;
             if (tab.path === '/upload' && imageCount > 0) {

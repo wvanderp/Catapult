@@ -6,6 +6,15 @@ interface ImageItemProperties {
     id: string;
 }
 
+/**
+ * ImageItem displays a single image with its thumbnail and editable fields.
+ * Shows the image preview, filename, and input fields for all template variables.
+ * Fields can be filled in by the user for this specific image.
+ *
+ * @param props - Component props
+ * @param props.id - The unique identifier for the image
+ * @returns The image item component
+ */
 export function ImageItem({ id }: ImageItemProperties) {
     const image = useImageSetStore((state) => state.imageSet.images[id]);
     const template = useImageSetStore((state) => state.imageSet.template);
@@ -13,7 +22,7 @@ export function ImageItem({ id }: ImageItemProperties) {
     const updateImageKeys = useImageSetStore((state) => state.updateImageKeys);
 
     const keys = useMemo(() => extractTemplateKeys(titleTemplate + ' ' + template), [titleTemplate, template]);
-    
+
     // Compute imageUrl directly from the image data
     const imageUrl = image?.file ? `data:${image.mimeType};base64,${image.file}` : '';
 

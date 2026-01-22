@@ -4,6 +4,18 @@ import { useImageSetStore } from '../store/imageSetStore';
 import { clearDatabase } from '../utils/indexedDbStorage';
 import { useWikimediaCommons } from '../hooks/useWikimediaCommons';
 
+/**
+ * SettingsSidebar provides a slide-out panel for application settings.
+ * Includes:
+ * - Authentication management (login/logout)
+ * - Default template configuration
+ * - Global variable management
+ * - Settings import/export
+ * - Database clearing
+ * - Reset to defaults
+ * 
+ * @returns The settings sidebar component
+ */
 function SettingsSidebar() {
     const {
         isSidebarOpen,
@@ -26,11 +38,21 @@ function SettingsSidebar() {
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string }>();
     const fileInputReference = useRef<HTMLInputElement>(null);
 
+    /**
+     * Displays a temporary status message (success or error) for 3 seconds.
+     *
+     * @param type - Type of message to display
+     * @param text - Message text to show
+     */
     function showStatus(type: 'success' | 'error', text: string) {
         setStatusMessage({ type, text });
         setTimeout(() => setStatusMessage(undefined), 3000);
     }
 
+    /**
+     * Adds a new default global variable if the key is not empty.
+     * Clears the input fields after adding.
+     */
     function handleAddVariable() {
         const trimmedKey = newVariableKey.trim();
         if (!trimmedKey) return;
@@ -40,6 +62,10 @@ function SettingsSidebar() {
         setNewVariableValue('');
     }
 
+    /**
+     * Clears all data from IndexedDB after user confirmation.
+     * Removes all stored images and settings.
+     */
     async function handleClearIndexedDB() {
         if (!confirm('Are you sure you want to clear all stored data? This will remove all images and settings from IndexedDB.')) {
             return;
@@ -55,6 +81,10 @@ function SettingsSidebar() {
         }
     }
 
+    /**
+     * Exports current settings as a JSON file.
+     * Downloads a file with timestamp in the filename.
+     */
     function handleExportSettings() {
         const settings = exportSettings(useSettingsStore.getState());
         const json = JSON.stringify(settings, undefined, 2);
@@ -72,10 +102,19 @@ function SettingsSidebar() {
         showStatus('success', 'Settings exported successfully');
     }
 
+    /**
+     * Triggers the hidden file input to open the file picker.
+     */
     function handleImportClick() {
         fileInputReference.current?.click();
     }
 
+    /**
+     * Imports settings from a selected JSON file.
+     * Validates the file format and updates all settings.
+     *
+     * @param event - File input change event
+     */
     async function handleImportSettings(event: React.ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -109,6 +148,9 @@ function SettingsSidebar() {
         event.target.value = '';
     }
 
+    /**
+     * Resets all settings to default values after user confirmation.
+     */
     function handleResetToDefaults() {
         if (!confirm('Are you sure you want to reset all settings to their default values?')) {
             return;

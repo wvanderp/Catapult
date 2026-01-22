@@ -26,6 +26,16 @@ const DEFAULT_EXIF_FIELDS = [
     'ISO'
 ];
 
+/**
+ * ContextItemButton renders a clickable button displaying a context item's key-value pair.
+ * It shows the key in gray and the value below it, with conditional styling based on disabled state.
+ *
+ * @param props - The component props
+ * @param props.item - The context item to display
+ * @param props.disabled - Whether the button is disabled
+ * @param props.onClick - Click handler function
+ * @returns The context item button component
+ */
 function ContextItemButton({ item, disabled, onClick }: {
     item: ContextItem;
     disabled: boolean;
@@ -45,6 +55,16 @@ function ContextItemButton({ item, disabled, onClick }: {
     );
 }
 
+/**
+ * ContextSectionDisplay renders a section of context items in a grid layout.
+ * Returns undefined if the section has no items.
+ *
+ * @param props - The component props
+ * @param props.section - The section data containing title and items
+ * @param props.disabled - Whether insertion is disabled
+ * @param props.onInsertReference - Callback to insert a reference
+ * @returns The section display component or undefined
+ */
 function ContextSectionDisplay({ section, disabled, onInsertReference }: {
     section: ContextSection;
     disabled: boolean;
@@ -83,9 +103,24 @@ export interface ContextDataPanelProps {
         extension: string;
         index: number;
         date?: string;
+        dateTime?: string;
     };
 }
 
+/**
+ * ContextDataPanel displays available context data for template variable insertion.
+ * Shows global variables, EXIF data, utility context, and template keys in organized sections.
+ * Users can click items to insert references into the active field.
+ *
+ * @param props - Component props
+ * @param props.globalVariables - Global variables available across all images
+ * @param props.exifData - EXIF metadata extracted from the image
+ * @param props.templateKeys - Keys defined in the template
+ * @param props.activeFieldKey - Currently focused field key
+ * @param props.onInsertReference - Callback to insert a reference into the active field
+ * @param props.utility - Utility context information (extension, index, date, dateTime)
+ * @returns The context data panel component
+ */
 export function ContextDataPanel({
     globalVariables,
     exifData,
@@ -101,28 +136,17 @@ export function ContextDataPanel({
 
         // Utility context section
         if (utility) {
-            const utilityItems: ContextItem[] = [
-                {
-                    key: 'extension',
-                    value: utility.extension,
-                    referenceKey: '<<<utility.extension>>>',
-                },
-                {
-                    key: 'index',
-                    value: String(utility.index),
-                    referenceKey: '<<<utility.index>>>',
-                },
-            ];
+            const utilityItems: ContextItem[] = Object.entries(utility)
+                .filter(([, value]) => value !== undefined && value !== null)
+                .map(([key, value]) => ({
+                    key,
+                    value: String(value),
+                    referenceKey: `<<<utility.${key}>>>`,
+                }));
 
-            if (utility.date) {
-                utilityItems.push({
-                    key: 'date',
-                    value: utility.date,
-                    referenceKey: '<<<utility.date>>>',
-                });
+            if (utilityItems.length > 0) {
+                result.push({ title: 'Utility', items: utilityItems });
             }
-
-            result.push({ title: 'Utility', items: utilityItems });
         }
 
         // Global variables section

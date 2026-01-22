@@ -2,6 +2,13 @@ import { Link } from '@tanstack/react-router';
 import { useWikimediaCommons } from '../hooks/useWikimediaCommons';
 import { useSettingsStore } from '../store/settingsStore';
 
+/**
+ * Header component displays the application navigation bar.
+ * Shows the Catapult logo/title, settings button, and authentication status.
+ * Provides login functionality when not authenticated and displays username when authenticated.
+ *
+ * @returns The header component
+ */
 export function Header() {
   const { login, isAuthenticated, userName } = useWikimediaCommons();
   const toggleSidebar = useSettingsStore((state) => state.toggleSidebar);

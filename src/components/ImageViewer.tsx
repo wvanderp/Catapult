@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ImageViewerProps {
     imageUrl: string;
@@ -7,57 +7,72 @@ interface ImageViewerProps {
     onClose: () => void;
 }
 
+/**
+ * ImageViewer provides a fullscreen image viewer with zoom and pan capabilities.
+ * Supports keyboard shortcuts for zoom (+/-/0) and close (Escape).
+ * Users can drag to pan when zoomed in.
+ * 
+ * @param props - Component props
+ * @param props.imageUrl - URL of the image to display
+ * @param props.imageName - Name of the image for alt text
+ * @param props.isOpen - Whether the viewer is open
+ * @param props.onClose - Callback to close the viewer
+ * @returns The image viewer component or undefined if not open
+ */
 export function ImageViewer({ imageUrl, imageName, isOpen, onClose }: ImageViewerProps) {
     const [scale, setScale] = useState(1);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const containerRef = useRef<HTMLDivElement>(null);
+    const containerReference = useRef<HTMLDivElement>(null);
+
+    const handleZoomIn = useCallback(() => {
+        setScale((previous) => Math.min(previous + 0.5, 5));
+    }, []);
+
+    const handleZoomOut = useCallback(() => {
+        setScale((previous) => Math.max(previous - 0.5, 0.5));
+    }, []);
+
+    const handleResetZoom = useCallback(() => {
+        setScale(1);
+        setPosition({ x: 0, y: 0 });
+    }, []);
 
     useEffect(() => {
-        if (!isOpen) {
-            setScale(1);
-            setPosition({ x: 0, y: 0 });
-            setIsDragging(false);
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
+        const handleKeyDown = (event: KeyboardEvent) => {
             if (!isOpen) return;
 
-            if (e.key === 'Escape') {
-                onClose();
-            } else if (e.key === '+' || e.key === '=') {
-                handleZoomIn();
-            } else if (e.key === '-' || e.key === '_') {
-                handleZoomOut();
-            } else if (e.key === '0') {
-                handleResetZoom();
+            switch (event.key) {
+                case 'Escape': {
+                    onClose();
+                    break;
+                }
+                case '+':
+                case '=': {
+                    handleZoomIn();
+                    break;
+                }
+                case '-':
+                case '_': {
+                    handleZoomOut();
+                    break;
+                }
+                case '0': {
+                    handleResetZoom();
+                    break;
+                }
             }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, scale, onClose]);
+        globalThis.addEventListener('keydown', handleKeyDown);
+        return () => globalThis.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose, handleZoomIn, handleZoomOut, handleResetZoom]);
 
-    const handleZoomIn = () => {
-        setScale((prev) => Math.min(prev + 0.5, 5));
-    };
-
-    const handleZoomOut = () => {
-        setScale((prev) => Math.max(prev - 0.5, 0.5));
-    };
-
-    const handleResetZoom = () => {
-        setScale(1);
-        setPosition({ x: 0, y: 0 });
-    };
-
-    const handleWheel = (e: React.WheelEvent) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        setScale((prev) => Math.min(Math.max(prev + delta, 0.5), 5));
+    const handleWheel = (event: React.WheelEvent) => {
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        setScale((previous) => Math.min(Math.max(previous + delta, 0.5), 5));
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -91,7 +106,7 @@ export function ImageViewer({ imageUrl, imageName, isOpen, onClose }: ImageViewe
             onClick={onClose}
         >
             <div
-                ref={containerRef}
+                ref={containerReference}
                 className="relative flex size-full items-center justify-center overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 onWheel={handleWheel}

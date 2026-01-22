@@ -46,7 +46,7 @@ export async function extractExifData(file: File): Promise<ExifData> {
 
 /**
  * Convert a base64 string to a File object
- *
+ * 
  * @param base64 - The base64 encoded image data (without prefix)
  * @param filename - The filename to use
  * @param mimeType - The MIME type of the image
@@ -74,6 +74,78 @@ export function base64ToFile(
  * @returns Formatted date string or undefined if invalid
  */
 export function formatExifDate(dateValue: unknown): string | undefined {
+  if (!dateValue) return undefined;
+
+  let date: Date;
+
+  if (dateValue instanceof Date) {
+    date = dateValue;
+  } else if (typeof dateValue === "string") {
+    // Handle EXIF format: "2024:01:15 10:30:00" -> "2024-01-15 10:30:00"
+    // Only replace colons in the date part (first two occurrences: YYYY:MM:DD)
+    const normalized = dateValue.replace(
+      /^(\d{4}):(\d{2}):(\d{2})/,
+      "$1-$2-$3"
+    );
+    date = new Date(normalized);
+  } else {
+    return undefined;
+  }
+
+  if (Number.isNaN(date.getTime())) return undefined;
+
+  // Format as YYYY-MM-DD HH:mm
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+/**
+ * Format EXIF date value as date only (YYYY-MM-DD)
+ *
+ * @param dateValue - The date value to format (Date, string, or unknown)
+ * @returns Formatted date string (YYYY-MM-DD) or undefined if invalid
+ */
+export function formatExifDateOnly(dateValue: unknown): string | undefined {
+  if (!dateValue) return undefined;
+
+  let date: Date;
+
+  if (dateValue instanceof Date) {
+    date = dateValue;
+  } else if (typeof dateValue === "string") {
+    // Handle EXIF format: "2024:01:15 10:30:00" -> "2024-01-15 10:30:00"
+    // Only replace colons in the date part (first two occurrences: YYYY:MM:DD)
+    const normalized = dateValue.replace(
+      /^(\d{4}):(\d{2}):(\d{2})/,
+      "$1-$2-$3"
+    );
+    date = new Date(normalized);
+  } else {
+    return undefined;
+  }
+
+  if (Number.isNaN(date.getTime())) return undefined;
+
+  // Format as YYYY-MM-DD
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Format EXIF date value as datetime (YYYY-MM-DD HH:mm)
+ *
+ * @param dateValue - The date value to format (Date, string, or unknown)
+ * @returns Formatted datetime string (YYYY-MM-DD HH:mm) or undefined if invalid
+ */
+export function formatExifDateTime(dateValue: unknown): string | undefined {
   if (!dateValue) return undefined;
 
   let date: Date;

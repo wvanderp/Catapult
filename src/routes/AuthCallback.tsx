@@ -2,6 +2,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useWikimediaCommons } from '../hooks/useWikimediaCommons';
 
+/**
+ * AuthCallback handles the OAuth callback from Wikimedia Commons.
+ * Processes the authentication response and redirects to the upload page on success.
+ * Displays errors if authentication fails.
+ *
+ * @returns The auth callback component
+ */
 export function AuthCallback() {
   const { handleCallback } = useWikimediaCommons();
   const navigate = useNavigate();

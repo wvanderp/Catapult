@@ -21,6 +21,12 @@ export function clearDatabase(): Promise<void> {
     });
 }
 
+/**
+ * Gets or creates the IndexedDB database instance for general storage.
+ * Creates the object store on first initialization.
+ *
+ * @returns Promise resolving to the IDBDatabase instance
+ */
 function getDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -42,7 +48,6 @@ export const indexedDBStorage: StateStorage = {
             const transaction = database.transaction(STORE_NAME, 'readonly');
             const store = transaction.objectStore(STORE_NAME);
             const request = store.get(name);
-            // eslint-disable-next-line unicorn/no-null -- StateStorage interface requires null
             request.addEventListener('success', () => resolve(request.result as string ?? null));
             request.addEventListener('error', () => reject(request.error));
         });

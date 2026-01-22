@@ -179,7 +179,7 @@ describe("applyTemplate", () => {
             level3: "Done",
           },
         },
-        2 // Only 2 iterations allowed
+        2, // Only 2 iterations allowed
       );
       // With 2 iterations: level1 -> level2 -> level3, but level3 doesn't resolve
       expect(result).toBe("<<<missing>>>");
@@ -223,8 +223,7 @@ describe("applyTemplate", () => {
       // Using null explicitly here to test how external EXIF data is handled
       const result = applyTemplate(
         "Value: <<<exif.nullField>>>",
-        // eslint-disable-next-line unicorn/no-null
-        { exif: { nullField: null } }
+        { exif: { nullField: null } },
       );
       expect(result).toBe("Value: <<<missing>>>");
     });
@@ -241,6 +240,27 @@ describe("applyTemplate", () => {
         exif: { Flash: true },
       });
       expect(result).toBe("Flash: true");
+    });
+
+    it("should trim whitespace from variable values", () => {
+      const result = applyTemplate("Value: <<<name>>>", {
+        name: "  John Doe  ",
+      });
+      expect(result).toBe("Value: John Doe");
+    });
+
+    it("should trim whitespace from nested exif values", () => {
+      const result = applyTemplate("Camera: <<<exif.Make>>>", {
+        exif: { Make: "  Canon  " },
+      });
+      expect(result).toBe("Camera: Canon");
+    });
+
+    it("should trim whitespace from global values", () => {
+      const result = applyTemplate("Author: <<<global.author>>>", {
+        global: { author: "\n\tJane Doe\t\n" },
+      });
+      expect(result).toBe("Author: Jane Doe");
     });
   });
 
@@ -272,7 +292,7 @@ describe("applyTemplate", () => {
           title: "My Photo",
           global: { author: "Jane" },
           exif: { Year: 2024 },
-        }
+        },
       );
       expect(result).toBe("My Photo by Jane (2024)");
     });
@@ -343,7 +363,7 @@ describe("applyTemplate", () => {
         "File_<<<utility.index>>>_of_type.<<<utility.extension>>>",
         {
           utility: { extension: "jpg", index: 5 },
-        }
+        },
       );
       expect(result).toBe("File_5_of_type.jpg");
     });
@@ -354,16 +374,23 @@ describe("applyTemplate", () => {
         {
           global: { author: "JohnDoe" },
           utility: { extension: "png", index: 0 },
-        }
+        },
       );
       expect(result).toBe("JohnDoe_photo_0.png");
     });
 
     it("should resolve utility.date value", () => {
       const result = applyTemplate("Date taken: <<<utility.date>>>", {
-        utility: { extension: "jpg", index: 0, date: "2025-06-15 11:02" },
+        utility: { extension: "jpg", index: 0, date: "2025-06-15" },
       });
-      expect(result).toBe("Date taken: 2025-06-15 11:02");
+      expect(result).toBe("Date taken: 2025-06-15");
+    });
+
+    it("should resolve utility.dateTime value", () => {
+      const result = applyTemplate("DateTime taken: <<<utility.dateTime>>>", {
+        utility: { extension: "jpg", index: 0, dateTime: "2025-06-15 11:02" },
+      });
+      expect(result).toBe("DateTime taken: 2025-06-15 11:02");
     });
 
     it("should handle missing utility.date", () => {
@@ -371,6 +398,13 @@ describe("applyTemplate", () => {
         utility: { extension: "jpg", index: 0 },
       });
       expect(result).toBe("Date: <<<missing>>>");
+    });
+
+    it("should handle missing utility.dateTime", () => {
+      const result = applyTemplate("DateTime: <<<utility.dateTime>>>", {
+        utility: { extension: "jpg", index: 0 },
+      });
+      expect(result).toBe("DateTime: <<<missing>>>");
     });
   });
 });

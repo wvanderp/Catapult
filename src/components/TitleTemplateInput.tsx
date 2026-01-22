@@ -1,5 +1,11 @@
 import { useImageSetStore } from "../store/imageSetStore";
 
+/**
+ * TitleTemplateInput allows users to define the filename template for uploaded images.
+ * Uses the same template syntax as TemplateInput with triple angle brackets for variables.
+ *
+ * @returns The title template input component
+ */
 export default function TitleTemplateInput() {
     const titleTemplate = useImageSetStore((state) => state.imageSet.titleTemplate);
     const setTitleTemplate = useImageSetStore((state) => state.setTitleTemplate);
