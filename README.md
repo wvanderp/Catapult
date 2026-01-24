@@ -40,7 +40,7 @@ You'll need to register an OAuth 2.0 application on Wikimedia, if you configure 
 1. Visit the [OAuth Consumer Registration](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2) page
 2. Configure your application with:
    - **Redirect URI**: `http://localhost:5173/Catapult/auth/callback` (for local development)
-   - **Grants**: 
+   - **Grants**:
      - Interact with pages
      - Interact with media
 3. then use this provided authentication key as `VITE_ACCESS_TOKEN` in your `.env` file.
@@ -50,17 +50,20 @@ For detailed instructions, see [docs/Acquiring-a-WIKIMEDIA-CLIENT-ID.md](docs/Ac
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    cd commons-uploader
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Create a `.env` file in the project root:
+
    ```env
    VITE_WIKIMEDIA_CLIENT_ID=your_client_id_here
    # Optional: Skip OAuth flow with direct access token
@@ -68,6 +71,7 @@ For detailed instructions, see [docs/Acquiring-a-WIKIMEDIA-CLIENT-ID.md](docs/Ac
    ```
 
 4. Start the development server:
+
    ```bash
    npm start
    ```
@@ -87,29 +91,9 @@ For detailed instructions, see [docs/Acquiring-a-WIKIMEDIA-CLIENT-ID.md](docs/Ac
 
 ### Template System
 
-Templates support variable interpolation using `{{variableName}}` syntax:
+Catapult features a powerful template system with variable interpolation, EXIF data access, and conditional blocks. Create dynamic, reusable templates that automatically pull in metadata from your images.
 
-**Example Title Template:**
-```
-{{event}} - {{subject}} - Photo {{imageNumber}}
-```
-
-**Example Description Template:**
-```
-{{description}}
-
-== {{int:license-header}} ==
-{{self|cc-by-sa-4.0}}
-
-[[Category:{{event}}]]
-[[Category:{{location}}]]
-```
-
-Variables can come from:
-- Context data (event info, location, etc.)
-- EXIF data (date, camera, etc.)
-- Custom per-image data
-- Automatic counters (imageNumber)
+📖 **[Full Template Syntax Documentation](docs/template-syntax.md)**
 
 ## Available Scripts
 

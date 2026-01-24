@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { extractTemplateKeys, applyTemplate } from "./templateUtils";
+import {
+  extractTemplateKeys,
+  applyTemplate,
+  processConditionals,
+} from "./templateUtils";
 
 describe("extractTemplateKeys", () => {
   it("should extract a single key from a template", () => {
@@ -221,10 +225,9 @@ describe("applyTemplate", () => {
 
     it("should handle null exif values", () => {
       // Using null explicitly here to test how external EXIF data is handled
-      const result = applyTemplate(
-        "Value: <<<exif.nullField>>>",
-        { exif: { nullField: null } },
-      );
+      const result = applyTemplate("Value: <<<exif.nullField>>>", {
+        exif: { nullField: null },
+      });
       expect(result).toBe("Value: <<<missing>>>");
     });
 
@@ -406,5 +409,491 @@ describe("applyTemplate", () => {
       });
       expect(result).toBe("DateTime: <<<missing>>>");
     });
+  });
+});
+
+describe("processConditionals", () => {
+  describe("basic conditional behavior", () => {
+    it("should include content when variable is defined", () => {
+      const template = "<<<if {name}>>>Hello <<<name>>><<<endif>>>";
+      const result = processConditionals(template, { name: "World" });
+      expect(result).toBe("Hello <<<name>>>");
+    });
+
+    it("should exclude content when variable is undefined", () => {
+      const template = "<<<if {name}>>>Hello <<<name>>><<<endif>>>";
+      const result = processConditionals(template, {});
+      expect(result).toBe("");
+    });
+
+    it("should exclude content when variable is empty string", () => {
+      const template = "<<<if {name}>>>Hello <<<name>>><<<endif>>>";
+      const result = processConditionals(template, { name: "" });
+      expect(result).toBe("");
+    });
+
+    it("should exclude content when variable is whitespace-only string", () => {
+      const template = "<<<if {name}>>>Hello <<<name>>><<<endif>>>";
+      const result = processConditionals(template, { name: "   " });
+      expect(result).toBe("");
+    });
+
+    it("should exclude content when variable is null", () => {
+      const template = "<<<if {name}>>>Hello <<<name>>><<<endif>>>";
+      const result = processConditionals(template, { name: null });
+      expect(result).toBe("");
+    });
+
+    it("should include content when variable is 0 (number)", () => {
+      const template = "<<<if {count}>>>Count: <<<count>>><<<endif>>>";
+      const result = processConditionals(template, { count: 0 });
+      expect(result).toBe("Count: <<<count>>>");
+    });
+
+    it("should include content when variable is false (boolean)", () => {
+      const template = "<<<if {flag}>>>Flag: <<<flag>>><<<endif>>>";
+      const result = processConditionals(template, { flag: false });
+      expect(result).toBe("Flag: <<<flag>>>");
+    });
+
+    it("should preserve text before and after conditional", () => {
+      const template = "Before <<<if {name}>>>middle<<<endif>>> After";
+      const result = processConditionals(template, { name: "test" });
+      expect(result).toBe("Before middle After");
+    });
+
+    it("should preserve text when conditional is excluded", () => {
+      const template = "Before <<<if {name}>>>middle<<<endif>>> After";
+      const result = processConditionals(template, {});
+      expect(result).toBe("Before  After");
+    });
+  });
+
+  describe("nested path variables", () => {
+    it("should check exif variables with dot notation", () => {
+      const template = "<<<if {exif.Make}>>>Camera: <<<exif.Make>>><<<endif>>>";
+      const result = processConditionals(template, { exif: { Make: "Canon" } });
+      expect(result).toBe("Camera: <<<exif.Make>>>");
+    });
+
+    it("should exclude when exif variable is missing", () => {
+      const template = "<<<if {exif.Make}>>>Camera: <<<exif.Make>>><<<endif>>>";
+      const result = processConditionals(template, { exif: {} });
+      expect(result).toBe("");
+    });
+
+    it("should check global variables with dot notation", () => {
+      const template =
+        "<<<if {global.author}>>>By <<<global.author>>><<<endif>>>";
+      const result = processConditionals(template, {
+        global: { author: "John" },
+      });
+      expect(result).toBe("By <<<global.author>>>");
+    });
+
+    it("should check utility variables with dot notation", () => {
+      const template =
+        "<<<if {utility.date}>>>Date: <<<utility.date>>><<<endif>>>";
+      const result = processConditionals(template, {
+        utility: { extension: "jpg", index: 0, date: "2025-01-15" },
+      });
+      expect(result).toBe("Date: <<<utility.date>>>");
+    });
+
+    it("should exclude when utility variable is missing", () => {
+      const template =
+        "<<<if {utility.date}>>>Date: <<<utility.date>>><<<endif>>>";
+      const result = processConditionals(template, {
+        utility: { extension: "jpg", index: 0 },
+      });
+      expect(result).toBe("");
+    });
+
+    it("should handle deeply nested paths", () => {
+      const template = "<<<if {exif.GPS.Latitude}>>>Location<<<endif>>>";
+      const result = processConditionals(template, {
+        exif: { GPS: { Latitude: 52.3676 } },
+      });
+      expect(result).toBe("Location");
+    });
+
+    it("should exclude when deeply nested path is missing", () => {
+      const template = "<<<if {exif.GPS.Latitude}>>>Location<<<endif>>>";
+      const result = processConditionals(template, { exif: { GPS: {} } });
+      expect(result).toBe("");
+    });
+  });
+
+  describe("nested conditionals", () => {
+    it("should handle simple nested conditionals - both true", () => {
+      const template =
+        "<<<if {outer}>>>Outer[<<<if {inner}>>>Inner<<<endif>>>]<<<endif>>>";
+      const result = processConditionals(template, {
+        outer: "yes",
+        inner: "yes",
+      });
+      expect(result).toBe("Outer[Inner]");
+    });
+
+    it("should handle simple nested conditionals - outer true, inner false", () => {
+      const template =
+        "<<<if {outer}>>>Outer[<<<if {inner}>>>Inner<<<endif>>>]<<<endif>>>";
+      const result = processConditionals(template, { outer: "yes", inner: "" });
+      expect(result).toBe("Outer[]");
+    });
+
+    it("should handle simple nested conditionals - outer false", () => {
+      const template =
+        "<<<if {outer}>>>Outer[<<<if {inner}>>>Inner<<<endif>>>]<<<endif>>>";
+      const result = processConditionals(template, {
+        outer: "",
+        inner: "yes",
+      });
+      expect(result).toBe("");
+    });
+
+    it("should handle three levels of nesting - all true", () => {
+      const template =
+        "<<<if {a}>>>A[<<<if {b}>>>B[<<<if {c}>>>C<<<endif>>>]<<<endif>>>]<<<endif>>>";
+      const result = processConditionals(template, {
+        a: "1",
+        b: "2",
+        c: "3",
+      });
+      expect(result).toBe("A[B[C]]");
+    });
+
+    it("should handle three levels of nesting - middle false", () => {
+      const template =
+        "<<<if {a}>>>A[<<<if {b}>>>B[<<<if {c}>>>C<<<endif>>>]<<<endif>>>]<<<endif>>>";
+      const result = processConditionals(template, { a: "1", b: "", c: "3" });
+      expect(result).toBe("A[]");
+    });
+
+    it("should handle multiple nested conditionals in sequence", () => {
+      const template =
+        "<<<if {a}>>>[<<<if {b}>>>B<<<endif>>>][<<<if {c}>>>C<<<endif>>>]<<<endif>>>";
+      const result = processConditionals(template, { a: "1", b: "2", c: "3" });
+      expect(result).toBe("[B][C]");
+    });
+
+    it("should handle multiple nested conditionals - some false", () => {
+      const template =
+        "<<<if {a}>>>[<<<if {b}>>>B<<<endif>>>][<<<if {c}>>>C<<<endif>>>]<<<endif>>>";
+      const result = processConditionals(template, { a: "1", b: "", c: "3" });
+      expect(result).toBe("[][C]");
+    });
+  });
+
+  describe("multiple conditionals", () => {
+    it("should handle multiple independent conditionals", () => {
+      const template =
+        "<<<if {a}>>>A<<<endif>>> <<<if {b}>>>B<<<endif>>> <<<if {c}>>>C<<<endif>>>";
+      const result = processConditionals(template, {
+        a: "1",
+        b: "2",
+        c: "3",
+      });
+      expect(result).toBe("A B C");
+    });
+
+    it("should handle multiple conditionals - some false", () => {
+      const template =
+        "<<<if {a}>>>A<<<endif>>> <<<if {b}>>>B<<<endif>>> <<<if {c}>>>C<<<endif>>>";
+      const result = processConditionals(template, { a: "1", b: "", c: "3" });
+      expect(result).toBe("A  C");
+    });
+
+    it("should handle multiple conditionals - all false", () => {
+      const template =
+        "<<<if {a}>>>A<<<endif>>> <<<if {b}>>>B<<<endif>>> <<<if {c}>>>C<<<endif>>>";
+      const result = processConditionals(template, { a: "", b: "", c: "" });
+      expect(result).toBe("  ");
+    });
+  });
+
+  describe("whitespace handling", () => {
+    it("should handle whitespace in variable name", () => {
+      const template = "<<<if { name }>>>Hello<<<endif>>>";
+      const result = processConditionals(template, { name: "World" });
+      expect(result).toBe("Hello");
+    });
+
+    it("should preserve whitespace in content", () => {
+      const template = "<<<if {name}>>>  Hello  World  <<<endif>>>";
+      const result = processConditionals(template, { name: "test" });
+      expect(result).toBe("  Hello  World  ");
+    });
+
+    it("should handle multiline content", () => {
+      const template = `<<<if {author}>>>
+Author: <<<author>>>
+License: CC-BY-SA
+<<<endif>>>`;
+      const result = processConditionals(template, { author: "John" });
+      expect(result).toBe(`
+Author: <<<author>>>
+License: CC-BY-SA
+`);
+    });
+
+    it("should handle newlines between conditionals", () => {
+      const template = `<<<if {a}>>>A<<<endif>>>
+<<<if {b}>>>B<<<endif>>>`;
+      const result = processConditionals(template, { a: "1", b: "2" });
+      expect(result).toBe(`A
+B`);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should return template unchanged when no conditionals", () => {
+      const template = "Hello <<<name>>>!";
+      const result = processConditionals(template, { name: "World" });
+      expect(result).toBe("Hello <<<name>>>!");
+    });
+
+    it("should handle empty template", () => {
+      const result = processConditionals("", {});
+      expect(result).toBe("");
+    });
+
+    it("should handle conditional with empty content", () => {
+      const template = "<<<if {name}>>><<<endif>>>";
+      const result = processConditionals(template, { name: "test" });
+      expect(result).toBe("");
+    });
+
+    it("should handle conditional at start of template", () => {
+      const template = "<<<if {name}>>>Hello<<<endif>>> World";
+      const result = processConditionals(template, { name: "test" });
+      expect(result).toBe("Hello World");
+    });
+
+    it("should handle conditional at end of template", () => {
+      const template = "Hello <<<if {name}>>>World<<<endif>>>";
+      const result = processConditionals(template, { name: "test" });
+      expect(result).toBe("Hello World");
+    });
+
+    it("should handle special characters in content", () => {
+      const template = "<<<if {name}>>>Special: <>&\"'{{}}[[]]<<<endif>>>";
+      const result = processConditionals(template, { name: "test" });
+      expect(result).toBe("Special: <>&\"'{{}}[[]]");
+    });
+
+    it("should handle variables with special characters in names", () => {
+      const template = "<<<if {my_var}>>>Found<<<endif>>>";
+      const result = processConditionals(template, { my_var: "test" });
+      expect(result).toBe("Found");
+    });
+  });
+});
+
+describe("applyTemplate with conditionals", () => {
+  describe("basic conditional integration", () => {
+    it("should process conditional and substitute variables", () => {
+      const template = "<<<if {author}>>>By <<<author>>><<<endif>>>";
+      const result = applyTemplate(template, { author: "John" });
+      expect(result).toBe("By John");
+    });
+
+    it("should remove conditional block and content when false", () => {
+      const template = "<<<if {author}>>>By <<<author>>><<<endif>>>";
+      const result = applyTemplate(template, { author: "" });
+      expect(result).toBe("");
+    });
+
+    it("should handle conditional with nested path variables", () => {
+      const template = "<<<if {exif.Make}>>>Camera: <<<exif.Make>>><<<endif>>>";
+      const result = applyTemplate(template, { exif: { Make: "Canon" } });
+      expect(result).toBe("Camera: Canon");
+    });
+
+    it("should handle missing nested path in conditional", () => {
+      const template = "<<<if {exif.Make}>>>Camera: <<<exif.Make>>><<<endif>>>";
+      const result = applyTemplate(template, { exif: {} });
+      expect(result).toBe("");
+    });
+  });
+
+  describe("complex real-world scenarios", () => {
+    it("should handle Wikimedia Commons template with optional fields", () => {
+      const template = `=={{int:filedesc}}==
+{{Information
+|description={{en|1=<<<description>>>}}
+|date=<<<exif.DateTimeOriginal>>>
+|source={{own}}
+|author=[[User:<<<global.username>>>|<<<global.username>>>]]
+}}
+<<<if {global.category}>>>
+[[Category:<<<global.category>>>]]
+<<<endif>>>`;
+
+      const result = applyTemplate(template, {
+        description: "A beautiful sunset",
+        global: { username: "JohnDoe", category: "Sunsets" },
+        exif: { DateTimeOriginal: "2024-01-15" },
+      });
+
+      expect(result).toContain("A beautiful sunset");
+      expect(result).toContain("2024-01-15");
+      expect(result).toContain("JohnDoe");
+      expect(result).toContain("[[Category:Sunsets]]");
+    });
+
+    it("should exclude optional category when not provided", () => {
+      const template = `{{Information
+|description=<<<description>>>
+}}
+<<<if {global.category}>>>[[Category:<<<global.category>>>]]<<<endif>>>`;
+
+      const result = applyTemplate(template, {
+        description: "Test",
+        global: { username: "User" },
+      });
+
+      expect(result).toContain("Test");
+      expect(result).not.toContain("[[Category:");
+    });
+
+    it("should handle multiple optional fields", () => {
+      const template = `Title: <<<title>>>
+<<<if {subtitle}>>>Subtitle: <<<subtitle>>>
+<<<endif>>><<<if {author}>>>Author: <<<author>>>
+<<<endif>>><<<if {date}>>>Date: <<<date>>>
+<<<endif>>>`;
+
+      const result = applyTemplate(template, {
+        title: "My Photo",
+        author: "John",
+      });
+
+      expect(result).toContain("Title: My Photo");
+      expect(result).not.toContain("Subtitle:");
+      expect(result).toContain("Author: John");
+      expect(result).not.toContain("Date:");
+    });
+
+    it("should handle nested conditionals with variable substitution", () => {
+      const template = `<<<if {location}>>>Location: <<<location>>>
+<<<if {location.gps}>>>GPS: <<<location.gps>>><<<endif>>><<<endif>>>`;
+
+      const result = applyTemplate(template, {
+        location: "Amsterdam",
+        "location.gps": "52.3676, 4.9041",
+      });
+
+      // Note: location.gps is treated as a key path, not a nested object
+      expect(result).toContain("Location: Amsterdam");
+    });
+
+    it("should handle conditional with recursive variable resolution", () => {
+      const template = "<<<if {useAuthor}>>>By <<<authorTemplate>>><<<endif>>>";
+
+      const result = applyTemplate(template, {
+        useAuthor: "yes",
+        authorTemplate: "[[User:<<<global.username>>>]]",
+        global: { username: "JohnDoe" },
+      });
+
+      expect(result).toBe("By [[User:JohnDoe]]");
+    });
+  });
+
+  describe("conditional with missing placeholders", () => {
+    it("should show missing placeholder for undefined vars inside truthy conditional", () => {
+      const template = "<<<if {show}>>>Value: <<<missing>>><<<endif>>>";
+      const result = applyTemplate(template, { show: "yes" });
+      expect(result).toBe("Value: <<<missing>>>");
+    });
+
+    it("should not show missing placeholder when conditional is false", () => {
+      const template = "<<<if {show}>>>Value: <<<missing>>><<<endif>>>";
+      const result = applyTemplate(template, { show: "" });
+      expect(result).toBe("");
+    });
+  });
+
+  describe("integration with utility context", () => {
+    it("should handle conditional with utility variables", () => {
+      const template = `File <<<utility.index>>>.<<<utility.extension>>>
+<<<if {utility.date}>>>Date: <<<utility.date>>><<<endif>>>`;
+
+      const result = applyTemplate(template, {
+        utility: { extension: "jpg", index: 1, date: "2025-01-15" },
+      });
+
+      expect(result).toContain("File 1.jpg");
+      expect(result).toContain("Date: 2025-01-15");
+    });
+
+    it("should exclude utility conditional when missing", () => {
+      const template = `File <<<utility.index>>>.<<<utility.extension>>>
+<<<if {utility.date}>>>Date: <<<utility.date>>><<<endif>>>`;
+
+      const result = applyTemplate(template, {
+        utility: { extension: "jpg", index: 1 },
+      });
+
+      expect(result).toContain("File 1.jpg");
+      expect(result).not.toContain("Date:");
+    });
+  });
+});
+
+describe("extractTemplateKeys with conditionals", () => {
+  it("should extract variable from if statement", () => {
+    const template = "<<<if {author}>>>By <<<author>>><<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).toContain("author");
+  });
+
+  it("should not include 'if {variable}' as a key", () => {
+    const template = "<<<if {author}>>>By <<<author>>><<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).not.toContain("if {author}");
+  });
+
+  it("should not include 'endif' as a key", () => {
+    const template = "<<<if {author}>>>By <<<author>>><<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).not.toContain("endif");
+  });
+
+  it("should extract nested path variable from if statement", () => {
+    const template = "<<<if {exif.Make}>>>Camera<<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).toContain("exif.Make");
+  });
+
+  it("should extract both condition variable and content variables", () => {
+    const template =
+      "<<<if {hasAuthor}>>>By <<<author>>> on <<<date>>><<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).toContain("hasAuthor");
+    expect(keys).toContain("author");
+    expect(keys).toContain("date");
+  });
+
+  it("should extract variables from nested conditionals", () => {
+    const template = "<<<if {a}>>>A<<<if {b}>>>B<<<endif>>><<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).toContain("a");
+    expect(keys).toContain("b");
+  });
+
+  it("should handle mixed regular variables and conditionals", () => {
+    const template = "<<<title>>> <<<if {author}>>>by <<<author>>><<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).toContain("title");
+    expect(keys).toContain("author");
+    expect(keys.length).toBe(2); // author should not be duplicated
+  });
+
+  it("should extract variable with whitespace in if statement", () => {
+    const template = "<<<if { spaced }>>>Content<<<endif>>>";
+    const keys = extractTemplateKeys(template);
+    expect(keys).toContain("spaced");
   });
 });

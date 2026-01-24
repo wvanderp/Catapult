@@ -251,6 +251,57 @@ export function TemplateInfoPanel({ isOpen, onClose }: TemplateInfoPanelProps) {
                         </div>
                     </div>
 
+                    {/* Conditional Blocks */}
+                    <div>
+                        <h4 className="mb-3 text-base font-semibold text-white">Conditional Blocks</h4>
+                        <p className="mb-3 text-sm text-gray-400">
+                            Include content only when a variable is defined and not empty:
+                        </p>
+                        <div className="space-y-3">
+                            <div className="rounded-lg bg-zinc-900 p-4">
+                                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                    Syntax
+                                </div>
+                                <div className="font-mono text-sm text-green-400">
+                                    {"<<<if {variable}>>>"}
+                                    <span className="text-gray-400">content to include</span>
+                                    {"<<<endif>>>"}
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg bg-zinc-900 p-4">
+                                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                    Example: Optional Category
+                                </div>
+                                <div className="font-mono text-sm text-gray-300">
+                                    {"<<<if {global.category}>>>[[Category:<<<global.category>>>]]<<<endif>>>"}
+                                </div>
+                                <div className="mt-2 text-xs text-gray-500">
+                                    Only adds the category if <code className="text-green-400">global.category</code> is set.
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg bg-zinc-900 p-4">
+                                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                    Nested Conditionals
+                                </div>
+                                <div className="font-mono text-sm text-gray-300 whitespace-pre-line">
+                                    {"<<<if {location}>>>Location: <<<location>>>\n<<<if {exif.GPS.Latitude}>>>GPS: <<<exif.GPS.Latitude>>><<<endif>>><<<endif>>>"}
+                                </div>
+                                <div className="mt-2 text-xs text-gray-500">
+                                    Conditionals can be nested inside each other.
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-900/50 p-3">
+                            <h5 className="mb-2 text-sm font-medium text-white">What counts as "defined"?</h5>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="text-green-400">✓ Truthy: any text, numbers (including 0), booleans</div>
+                                <div className="text-red-400">✗ Falsy: undefined, null, empty string, whitespace only</div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Advanced Features */}
                     <div>
                         <h4 className="mb-2 text-base font-semibold text-white">Advanced Features</h4>

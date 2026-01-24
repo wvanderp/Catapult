@@ -18,7 +18,17 @@ export function TemplateInput() {
           Template for images
         </label>
         <p className="text-sm text-gray-500">
-          The template below is applied to all images. Use triple angle brackets for variables (e.g. {"<<<title>>>"}). You will be asked to fill in the values for each image.
+          Use triple angle brackets for variables (e.g. {"<<<title>>>"}).
+          See the{" "}
+          <a
+            href="https://github.com/wvanderp/Catapult/blob/main/docs/template-syntax.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline hover:text-blue-300"
+          >
+            template syntax guide
+          </a>{" "}
+          for conditionals, EXIF data, and more.
         </p>
       </div>
       <textarea
