@@ -3,17 +3,60 @@ import { useImageSetStore } from '../store/imageSetStore';
 
 type TabPath = '/upload' | '/variables' | '/fillout' | '/review';
 
-const tabs: { path: TabPath; label: string; description: string }[] = [
-  { path: '/upload', label: '1. Upload', description: 'Add images' },
-  { path: '/variables', label: '2. Variables', description: 'Set templates' },
-  { path: '/fillout', label: '3. Fill Out', description: 'Fill forms' },
-  { path: '/review', label: '4. Review', description: 'Upload to Commons' },
+interface Tab {
+  path: TabPath;
+  label: string;
+  step: number;
+  icon: React.ReactNode;
+}
+
+const tabs: Tab[] = [
+  {
+    path: '/upload',
+    label: 'Upload',
+    step: 1,
+    icon: (
+      <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
+    path: '/variables',
+    label: 'Variables',
+    step: 2,
+    icon: (
+      <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+      </svg>
+    ),
+  },
+  {
+    path: '/fillout',
+    label: 'Fill Out',
+    step: 3,
+    icon: (
+      <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+    ),
+  },
+  {
+    path: '/review',
+    label: 'Review',
+    step: 4,
+    icon: (
+      <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
 ];
 
 /**
  * TabNavigation displays the step-by-step navigation tabs for the upload workflow.
  * Shows badges for image count and review progress.
- * Highlights the current active tab.
+ * Highlights the current active tab with visual indicators.
  * 
  * @returns The tab navigation component
  */
@@ -24,19 +67,67 @@ export function TabNavigation() {
   const imageCount = Object.keys(images).length;
   const reviewedCount = Object.values(images).filter((img) => img.reviewed).length;
 
-  return (
-    <nav className="mb-6 border-b border-zinc-700">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="flex space-x-1">
-          {tabs.map((tab) => {
-            const isActive = location.pathname === tab.path;
+  /**
+   * Get the badge content for a tab if applicable.
+   * 
+   * @param path - The path of the tab to get badge for
+   * @returns Badge text or undefined if no badge should be shown
+   */
+  function getBadge(path: TabPath): string | undefined {
+    if (path === '/upload' && imageCount > 0) {
+      return `${imageCount}`;
+    }
+    if (path === '/review' && imageCount > 0) {
+      return `${reviewedCount}/${imageCount}`;
+    }
+    return undefined;
+  }
 
-            // Show badge for certain tabs
-            let badge: string | undefined;
-            if (tab.path === '/upload' && imageCount > 0) {
-              badge = `${imageCount}`;
-            } else if (tab.path === '/review' && imageCount > 0) {
-              badge = `${reviewedCount}/${imageCount}`;
+  /**
+   * Get the current step index for progress calculation.
+   * 
+   * @returns The current step index (0 if not found)
+   */
+  function getCurrentStepIndex(): number {
+    const index = tabs.findIndex(tab => tab.path === location.pathname);
+    return Math.max(index, 0);
+  }
+
+  const currentStepIndex = getCurrentStepIndex();
+
+  return (
+    <nav className="border-b border-zinc-800/60 bg-zinc-950/50 backdrop-blur-md">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="flex items-center gap-1">
+          {tabs.map((tab, index) => {
+            const isActive = location.pathname === tab.path;
+            const isPast = index < currentStepIndex;
+            const badge = getBadge(tab.path);
+
+            /**
+             * Get the indicator style based on step state.
+             * 
+             * @returns CSS class string for the indicator element
+             */
+            function getIndicatorStyle(): string {
+              if (isActive) {
+                return 'bg-teal-600 text-white';
+              }
+              if (isPast) {
+                return 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30';
+              }
+              return 'bg-zinc-800/80 text-zinc-500 ring-1 ring-zinc-700/50 group-hover:ring-zinc-600/50';
+            }
+
+            /**
+             * Get the text style based on step state.
+             * 
+             * @returns CSS class string for the text element
+             */
+            function getTextStyle(): string {
+              if (isActive) return 'text-white';
+              if (isPast) return 'text-zinc-400 hover:text-zinc-200';
+              return 'text-zinc-500 hover:text-zinc-300';
             }
 
             return (
@@ -44,24 +135,44 @@ export function TabNavigation() {
                 key={tab.path}
                 to={tab.path}
                 className={`
-                  relative px-4 py-3 text-sm font-medium transition-colors
-                  ${isActive
-                    ? 'border-b-2 border-white text-white'
-                    : 'border-b-2 border-transparent text-gray-400 hover:text-gray-200'
-                  }
+                  group relative flex items-center gap-2.5 px-5 py-4 text-sm font-medium transition-all duration-200
+                  ${getTextStyle()}
                 `}
               >
-                <span className="flex items-center gap-2">
-                  {tab.label}
-                  {badge && (
-                    <span className={`
-                      rounded-full px-1.5 py-0.5 text-xs
-                      ${isActive ? 'bg-white text-black' : 'bg-zinc-700 text-gray-300'}
-                    `}>
-                      {badge}
-                    </span>
+                {/* Step indicator */}
+                <span className={`
+                  flex size-7 items-center justify-center rounded-lg text-xs font-bold transition-all duration-200
+                  ${getIndicatorStyle()}
+                `}>
+                  {isPast ? (
+                    <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    tab.step
                   )}
                 </span>
+
+                {/* Label */}
+                <span className="font-semibold">{tab.label}</span>
+
+                {/* Badge */}
+                {badge && (
+                  <span className={`
+                    rounded-full px-2 py-0.5 text-xs font-bold transition-all
+                    ${isActive
+                      ? 'bg-white/15 text-white'
+                      : 'bg-zinc-800 text-zinc-400'
+                    }
+                  `}>
+                    {badge}
+                  </span>
+                )}
+
+                {/* Active indicator */}
+                {isActive && (
+                  <span className="absolute inset-x-0 -bottom-px h-0.5 bg-teal-500" />
+                )}
               </Link>
             );
           })}
@@ -70,3 +181,4 @@ export function TabNavigation() {
     </nav>
   );
 }
+

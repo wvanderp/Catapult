@@ -22,16 +22,16 @@ export interface ImageCarouselProps {
  * @returns CSS class string for the ring styling
  */
 function getStatusStyles(status: 'complete' | 'partial' | 'empty', isSelected: boolean): string {
-    if (isSelected) return 'ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-900';
+    if (isSelected) return 'ring-2 ring-teal-400 ring-offset-2 ring-offset-zinc-950';
     switch (status) {
         case 'complete': {
-            return 'ring-2 ring-green-500/50';
+            return 'ring-2 ring-emerald-400/50';
         }
         case 'partial': {
-            return 'ring-2 ring-yellow-500/50';
+            return 'ring-2 ring-amber-400/50';
         }
         default: {
-            return 'ring-1 ring-zinc-600';
+            return 'ring-1 ring-zinc-700/80';
         }
     }
 }
@@ -62,12 +62,12 @@ function Thumbnail({ image, isSelected, status, index, onSelect }: ThumbnailProp
     return (
         <button
             onClick={onSelect}
-            className={`group relative size-16 shrink-0 overflow-hidden rounded-lg transition-all ${getStatusStyles(status, isSelected)}`}
+            className={`group relative size-16 shrink-0 overflow-hidden rounded-xl transition-all duration-200 hover:scale-105 ${getStatusStyles(status, isSelected)}`}
             title={image.name}
         >
             {isLoading ? (
-                <div className="flex size-full items-center justify-center bg-zinc-800">
-                    <div className="size-4 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-400" />
+                <div className="flex size-full items-center justify-center bg-zinc-900">
+                    <div className="size-4 animate-spin rounded-full border-2 border-zinc-700 border-t-teal-400" />
                 </div>
             ) : (
                 <img
@@ -77,11 +77,11 @@ function Thumbnail({ image, isSelected, status, index, onSelect }: ThumbnailProp
                 />
             )}
             <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
-                <span className="text-xs font-medium text-white">{index + 1}</span>
+            <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-1">
+                <span className="text-xs font-bold text-white">{index + 1}</span>
             </div>
             {status === 'complete' && (
-                <div className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-green-500 text-xs text-white">
+                <div className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white shadow-sm shadow-emerald-500/30">
                     ✓
                 </div>
             )}
@@ -117,7 +117,7 @@ export function ImageCarousel({ images, currentIndex, onSelectImage, getCompleti
     return (
         <div
             ref={carouselReference}
-            className="flex gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-track-zinc-800 scrollbar-thumb-zinc-600"
+            className="flex gap-2.5 overflow-x-auto rounded-2xl bg-zinc-900/60 p-3 ring-1 ring-zinc-800/60"
         >
             {images.map((image, index) => {
                 const status = getCompletionStatus?.(image) ?? 'empty';
@@ -137,3 +137,4 @@ export function ImageCarousel({ images, currentIndex, onSelectImage, getCompleti
         </div>
     );
 }
+

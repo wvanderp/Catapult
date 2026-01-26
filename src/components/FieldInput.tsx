@@ -31,24 +31,30 @@ export function FieldInput({ fieldKey, value, onChange, onFocus, templateContext
         preview = applyTemplate(value, context);
     }
 
+    const hasValue = value.trim().length > 0;
+
     return (
-        <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wider text-gray-500">
-                {fieldKey}
+        <div className="group space-y-2">
+            <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500 transition-colors group-focus-within:text-teal-400">
+                <span>{fieldKey}</span>
+                {hasValue && (
+                    <span className="flex size-1.5 rounded-full bg-emerald-400" />
+                )}
             </label>
             <input
                 type="text"
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 onFocus={onFocus}
-                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={fieldKey}
+                className="w-full rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-4 py-3 text-sm text-white transition-all duration-200 placeholder:text-zinc-600 focus:border-teal-400/50 focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-teal-400/20"
+                placeholder={`Value for ${fieldKey}`}
             />
             {templateContext && (
-                <div className="min-h-[2rem] px-3 py-2 text-xs text-gray-500 break-words">
-                    {preview || '\u00A0'}
+                <div className="min-h-[3rem] rounded-lg bg-zinc-800/50 px-3 py-2.5 text-xs leading-relaxed text-zinc-400 ring-1 ring-zinc-700/30 break-all">
+                    {preview || <span className="text-zinc-600 italic">Live preview appears as you type</span>}
                 </div>
             )}
         </div>
     );
 }
+

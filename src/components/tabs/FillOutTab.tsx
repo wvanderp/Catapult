@@ -138,13 +138,17 @@ export function FillOutTab() {
 
   if (imageIds.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <div className="mb-4 text-5xl">📭</div>
-        <h2 className="mb-2 text-xl font-medium text-white">No images uploaded</h2>
-        <p className="mb-6 text-gray-400">Upload some images first to fill out their details.</p>
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="mb-6 flex size-20 items-center justify-center rounded-2xl bg-zinc-800/60 ring-1 ring-zinc-700/50">
+          <svg className="size-10 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-xl font-bold text-white">No images selected</h2>
+        <p className="mb-8 max-w-sm text-zinc-500">Add images first, then return here to fill out their details.</p>
         <Link
           to="/upload"
-          className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-teal-500"
         >
           Go to Upload
         </Link>
@@ -154,13 +158,17 @@ export function FillOutTab() {
 
   if (keys.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <div className="mb-4 text-5xl">📝</div>
-        <h2 className="mb-2 text-xl font-medium text-white">No variables defined</h2>
-        <p className="mb-6 text-gray-400">Add variables to your template first (e.g., {"<<<description>>>"}).</p>
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="mb-6 flex size-20 items-center justify-center rounded-2xl bg-zinc-800/60 ring-1 ring-zinc-700/50">
+          <svg className="size-10 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-xl font-bold text-white">No variables to fill out</h2>
+        <p className="mb-8 max-w-sm text-zinc-500">Your templates don't have any placeholders. Add some (e.g., {"<<<description>>>"}) to customize each image.</p>
         <Link
           to="/variables"
-          className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-teal-500"
         >
           Go to Variables
         </Link>
@@ -250,42 +258,51 @@ export function FillOutTab() {
   const progressPercent = Math.round((filledFields / totalFields) * 100);
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full flex-col gap-5 p-5">
       {/* Header with navigation */}
-      <div className="space-y-2">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Fill Out Details</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-300">
-              Image {safeCurrentIndex + 1} of {imageIds.length}
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold tracking-tight text-white">Fill Out Image Details</h2>
+            <span className="flex items-center gap-2 rounded-lg bg-zinc-800/60 px-3 py-1.5 text-sm font-medium text-zinc-400 ring-1 ring-zinc-700/50">
+              Image <span className="font-bold text-white">{safeCurrentIndex + 1}</span> of {imageIds.length}
             </span>
-            <div className="flex gap-2">
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleNavigatePrevious}
+              disabled={safeCurrentIndex === 0}
+              className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${safeCurrentIndex === 0
+                ? 'cursor-not-allowed bg-zinc-900/50 text-zinc-700'
+                : 'border border-zinc-700/80 bg-zinc-800/80 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-700 hover:text-white'
+                }`}
+            >
+              <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </button>
+            {safeCurrentIndex < imageIds.length - 1 ? (
               <button
-                onClick={handleNavigatePrevious}
-                disabled={safeCurrentIndex === 0}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${safeCurrentIndex === 0
-                  ? 'cursor-not-allowed bg-zinc-800 text-gray-600'
-                  : 'bg-zinc-700 text-gray-200 hover:bg-zinc-600'
-                  }`}
+                onClick={handleNavigateNext}
+                className="flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-teal-500"
               >
-                ← Prev
+                Next
+                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </button>
-              {safeCurrentIndex < imageIds.length - 1 ? (
-                <button
-                  onClick={handleNavigateNext}
-                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-                >
-                  Next →
-                </button>
-              ) : (
-                <Link
-                  to="/review"
-                  className="inline-flex items-center rounded-lg bg-green-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-green-700"
-                >
-                  Review ✓
-                </Link>
-              )}
-            </div>
+            ) : (
+              <Link
+                to="/review"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-500"
+              >
+                Review
+                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -299,49 +316,64 @@ export function FillOutTab() {
       </div>
 
       {/* Main content area */}
-      <div className="grid flex-1 gap-3 overflow-hidden lg:grid-cols-[400px_1fr]">
+      <div className="grid flex-1 gap-5 overflow-hidden lg:grid-cols-[400px_1fr]">
         {/* Image preview */}
         <div
-          className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-zinc-900 p-3 ring-1 ring-zinc-800 transition-all hover:bg-zinc-850 hover:ring-zinc-700"
+          className="group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/80 ring-1 ring-zinc-800/60 transition-all duration-200 hover:ring-zinc-700/60"
           onClick={() => setIsImageViewerOpen(true)}
           title="Click to view fullscreen"
         >
           {isImageLoading ? (
-            <div className="flex size-full items-center justify-center">
-              <div className="size-8 animate-spin rounded-full border-4 border-zinc-600 border-t-zinc-400" />
+            <div className="flex size-full items-center justify-center py-20">
+              <div className="size-10 animate-spin rounded-full border-3 border-zinc-700 border-t-teal-400" />
             </div>
           ) : (
-            <img
-              src={imageUrl}
-              alt={currentImage.name}
-              className="h-full w-full rounded object-contain"
-            />
+            <>
+              <img
+                src={imageUrl}
+                alt={currentImage.name}
+                className="h-full max-h-[50vh] w-full rounded-xl object-contain p-4"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
+                <span className="flex items-center gap-2 rounded-xl bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
+                  <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                  Enlarge image
+                </span>
+              </div>
+            </>
           )}
         </div>
 
         {/* Form fields */}
-        <div className="flex flex-col overflow-hidden rounded-lg bg-zinc-800/50 ring-1 ring-zinc-700/50">
-          <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-700/50 px-4 py-3">
-            <h3 className="truncate font-medium text-white" title={currentImage.name}>
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/60 backdrop-blur-md">
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-800/50 px-5 py-4">
+            <h3 className="truncate font-semibold text-white" title={currentImage.name}>
               {currentImage.name}
             </h3>
-            <div className="flex items-center gap-2">
-              <span className={`rounded-lg px-2.5 py-1 text-xs font-medium ${progressPercent === 100 ? 'bg-green-600/20 text-green-400 ring-1 ring-green-500/30' : 'bg-zinc-700 text-gray-300'
+            <div className="flex items-center gap-3">
+              <span className={`rounded-lg px-3 py-1.5 text-xs font-bold ${progressPercent === 100
+                ? 'bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/25'
+                : 'bg-zinc-800/80 text-zinc-400 ring-1 ring-zinc-700/50'
                 }`}>
                 {filledFields}/{totalFields}
               </span>
               {safeCurrentIndex > 0 && (
                 <button
                   onClick={copyFromPrevious}
-                  className="rounded-lg bg-zinc-700 px-3 py-1 text-xs font-medium text-gray-200 transition-colors hover:bg-zinc-600"
+                  className="flex items-center gap-1.5 rounded-lg border border-zinc-700/50 bg-zinc-800/50 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition-all duration-200 hover:border-zinc-600/50 hover:bg-zinc-700/50"
                 >
+                  <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
                   Copy from previous
                 </button>
               )}
             </div>
           </div>
 
-          <div className="grid flex-1 auto-rows-min grid-cols-1 gap-3 overflow-y-auto p-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid flex-1 auto-rows-min grid-cols-1 gap-5 overflow-y-auto p-5 md:grid-cols-2 xl:grid-cols-3">
             {keys.map((key) => {
               const templateContext: TemplateContext = {
                 ...currentImage.keys,
@@ -389,3 +421,4 @@ export function FillOutTab() {
     </div>
   );
 }
+

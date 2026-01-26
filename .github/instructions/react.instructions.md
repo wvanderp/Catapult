@@ -2,15 +2,19 @@
 applyTo: "**/*.ts, **/*.tsx"
 ---
 
-Use named function over arrow functions
+# REACT CODE STANDARDS
+
+## Named Functions ONLY
+
+Arrow function components are **BANNED**.
 
 ```tsx
-// bad
+// ❌ WRONG - DO NOT DO THIS
 const MyComponent = () => {
   return <div>Hello World</div>;
 };
 
-// good
+// ✅ CORRECT - ALWAYS DO THIS
 function MyComponent() {
   return <div>Hello World</div>;
 }
@@ -18,52 +22,121 @@ function MyComponent() {
 
 ---
 
-This is a desktop first application. so make sure to use the real estate available on larger screens wisely. make the UI dense. Use grids and flexbox to create layouts that adapt to larger screens.
+## Desktop-First: USE THE SPACE
+
+This is a DESKTOP application. You have screen real estate—USE IT.
+
+- Dense, information-rich layouts
+- Grids and flexbox that EXPAND on larger screens
+- No mobile-first timidity
 
 ---
 
-When ever a component is not directly related to a page, break it out into a smaller reusable component. This will make it easier to test and reuse in other parts of the application.
+## Component Architecture: EXTRACT & REUSE
 
-In addition, always see if there are existing components that can be reused before creating a new one.
-
----
-
-Always put the props interface/type above the component that uses it. This will make it easier to find the props type when reading the component code.
+- If it's not page-specific, BREAK IT OUT into a reusable component
+- **BEFORE** creating ANY new component: CHECK if one already exists
+- Duplicate components are technical debt. Don't create them.
 
 ---
 
-## Design Thinking
+## Props Types: TOP OF FILE
 
-Before coding, understand the context and commit to a BOLD aesthetic direction:
+Props interface/type goes DIRECTLY ABOVE the component. No hunting.
 
-- **Purpose**: What problem does this interface solve? Who uses it?
-- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
-- **Constraints**: Technical requirements (framework, performance, accessibility).
-- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+```tsx
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+}
 
-**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
+function Button({ label, onClick }: ButtonProps) {
+  // ...
+}
+```
 
-Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
+---
 
-- Production-grade and functional
-- Visually striking and memorable
-- Cohesive with a clear aesthetic point-of-view
-- Meticulously refined in every detail
+## CSS Variables: MANDATORY
 
-## Frontend Aesthetics Guidelines
+- Colors, spacing, design tokens → CSS VARIABLES. Always.
+- Check `index.css` FIRST—the variable might already exist
+- New variable? Add it with a DESCRIPTIVE name and comment explaining usage
 
-Focus on:
+---
 
-- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
-- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
-- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
-- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
-- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
+# DESIGN PHILOSOPHY
 
-NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
+## Think BEFORE You Code
 
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
+Answer these questions or DON'T START:
 
-**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
+- **Purpose**: What problem does this solve? Who's the user?
+- **Tone**: Pick a BOLD direction—brutally minimal, maximalist, retro-futuristic, industrial/utilitarian, editorial, brutalist. COMMIT TO IT.
+- **Constraints**: Framework limits, performance budgets, accessibility requirements
+- **Differentiation**: What makes this MEMORABLE? One thing.
 
-Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+**EXECUTE WITH PRECISION.** Intentionality matters more than intensity.
+
+Every UI must be:
+
+- Production-grade and FUNCTIONAL
+- Visually striking
+- Aesthetically COHESIVE
+- Refined in EVERY detail
+
+---
+
+# FRONTEND AESTHETICS: HARD RULES
+
+## Typography
+
+- **REJECT** generic fonts: Arial, Inter, Roboto, system defaults
+- Choose DISTINCTIVE, characterful typefaces
+- Pair a display font with a complementary body font
+
+## Color & Theme
+
+- COMMIT to a cohesive palette
+- CSS variables for EVERYTHING
+- Dominant colors + sharp accents > timid even distribution
+
+## Motion & Animation
+
+- CSS-first for simple interactions
+- Motion library for complex React animations
+- ONE well-orchestrated page load > scattered micro-interactions
+- Surprise users with hover states and scroll triggers
+
+## Layout & Composition
+
+- Unexpected layouts. Asymmetry. Overlap.
+- Grid-breaking elements where appropriate
+- Generous whitespace OR controlled density—PICK ONE
+
+## Visual Depth
+
+- Solid color backgrounds are LAZY defaults
+- Add atmosphere: subtle textures, layered transparencies, purposeful shadows
+- Match visual treatment to the overall aesthetic
+
+---
+
+# BANNED: Generic AI Aesthetics
+
+**DO NOT** produce:
+
+- Purple gradients on white backgrounds
+- Glassmorphism, neumorphism, or gradient-heavy designs
+- Predictable layouts and cookie-cutter components
+- Overused fonts (Inter, Space Grotesk, etc.)
+
+This app uses a **FLAT, UTILITARIAN** style. Functional. Dense. Professional.
+
+---
+
+# CREATIVE EXCELLENCE
+
+You are capable of extraordinary work. PROVE IT.
+
+Think outside the box. Commit fully. Make it unforgettable.

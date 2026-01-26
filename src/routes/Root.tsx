@@ -12,14 +12,15 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
  */
 export function Root() {
   return (
-    <div className="min-h-screen bg-zinc-900 font-sans text-gray-300 flex flex-col">
+    <div className="relative flex min-h-screen flex-col bg-zinc-950 font-sans text-zinc-300 antialiased">
       <Header />
-      <div className="flex-grow">
+      <main className="relative z-0 flex-grow">
         <Outlet />
-      </div>
+      </main>
       <Footer />
       <SettingsSidebar />
       <TanStackRouterDevtools />
     </div>
   )
 }
+

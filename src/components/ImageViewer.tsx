@@ -172,3 +172,4 @@ export function ImageViewer({ imageUrl, imageName, isOpen, onClose }: ImageViewe
         </div>
     );
 }
+

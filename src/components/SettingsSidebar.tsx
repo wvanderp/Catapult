@@ -67,14 +67,14 @@ function SettingsSidebar() {
      * Removes all stored images and settings.
      */
     async function handleClearIndexedDB() {
-        if (!confirm('Are you sure you want to clear all stored data? This will remove all images and settings from IndexedDB.')) {
+        if (!confirm('Clear all stored images and reset your session? Your settings will be kept.')) {
             return;
         }
 
         try {
             await clearDatabase();
             clearAllImages();
-            showStatus('success', 'IndexedDB cleared successfully. Refresh the page to see changes.');
+            showStatus('success', 'All data cleared. The page will refresh to apply changes.');
         } catch (error) {
             showStatus('error', 'Failed to clear IndexedDB');
             console.error('Failed to clear IndexedDB:', error);
@@ -152,7 +152,7 @@ function SettingsSidebar() {
      * Resets all settings to default values after user confirmation.
      */
     function handleResetToDefaults() {
-        if (!confirm('Are you sure you want to reset all settings to their default values?')) {
+        if (!confirm('Reset all settings (templates, variables) to factory defaults?')) {
             return;
         }
         resetToDefaults();
@@ -167,21 +167,21 @@ function SettingsSidebar() {
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 z-40 bg-black/50"
+                className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md"
                 onClick={() => setSidebarOpen(false)}
             />
 
             {/* Sidebar */}
-            <aside className="fixed right-0 top-0 z-50 flex h-full w-[560px] flex-col bg-zinc-900 shadow-xl">
+            <aside className="fixed right-0 top-0 z-50 flex h-full w-[520px] flex-col border-l border-zinc-800/60 bg-zinc-950/95 shadow-2xl backdrop-blur-md">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-zinc-700 px-4 py-3">
-                    <h2 className="text-lg font-semibold text-white">Settings</h2>
+                <div className="flex items-center justify-between border-b border-zinc-800/60 px-5 py-4">
+                    <h2 className="text-lg font-bold tracking-tight text-white">Settings</h2>
                     <button
                         onClick={() => setSidebarOpen(false)}
-                        className="rounded p-1 text-gray-400 transition-colors hover:bg-zinc-700 hover:text-white"
+                        className="rounded-xl p-2.5 text-zinc-500 transition-all duration-200 hover:bg-zinc-800/80 hover:text-white"
                         aria-label="Close settings"
                     >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -190,9 +190,9 @@ function SettingsSidebar() {
                 {/* Status message */}
                 {statusMessage && (
                     <div
-                        className={`mx-4 mt-3 rounded px-3 py-2 text-sm ${statusMessage.type === 'success'
-                            ? 'bg-green-900/50 text-green-300'
-                            : 'bg-red-900/50 text-red-300'
+                        className={`mx-5 mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${statusMessage.type === 'success'
+                            ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30'
+                            : 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30'
                             }`}
                     >
                         {statusMessage.text}
@@ -200,60 +200,60 @@ function SettingsSidebar() {
                 )}
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto p-5">
                     {/* Default Templates Section */}
-                    <section className="mb-6">
-                        <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-400">
+                    <section className="mb-8">
+                        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500">
                             Default Templates
                         </h3>
 
-                        <label className="mb-2 block text-sm text-gray-300">
-                            Title Template
+                        <label className="mb-4 block">
+                            <span className="mb-2 block text-sm font-semibold text-zinc-300">Title Template</span>
                             <textarea
                                 value={defaultTitleTemplate}
                                 onChange={(e) => setDefaultTitleTemplate(e.target.value)}
-                                className="mt-1 block w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                                className="block w-full rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-4 py-3 font-mono text-[13px] text-white placeholder-zinc-600 transition-all duration-200 focus:border-teal-400/50 focus:outline-none focus:ring-2 focus:ring-teal-400/20"
                                 rows={2}
-                                placeholder="<<<subject>>> - (<<<date>>>).<<<utility.extension>>>"
+                                placeholder="e.g., <<<subject>>> - <<<date>>>.<<<utility.extension>>>"
                             />
                         </label>
 
-                        <label className="block text-sm text-gray-300">
-                            Description Template
+                        <label className="block">
+                            <span className="mb-2 block text-sm font-semibold text-zinc-300">Description Template</span>
                             <textarea
                                 value={defaultTemplate}
                                 onChange={(e) => setDefaultTemplate(e.target.value)}
-                                className="mt-1 block w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                                className="block w-full rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-4 py-3 font-mono text-[13px] text-white placeholder-zinc-600 transition-all duration-200 focus:border-teal-400/50 focus:outline-none focus:ring-2 focus:ring-teal-400/20"
                                 rows={10}
                             />
                         </label>
                     </section>
 
                     {/* Default Global Variables Section */}
-                    <section className="mb-6">
-                        <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-400">
+                    <section className="mb-8">
+                        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500">
                             Default Global Variables
                         </h3>
 
                         {Object.entries(defaultGlobalVariables).length > 0 ? (
-                            <div className="mb-3 space-y-2">
+                            <div className="mb-4 space-y-3">
                                 {Object.entries(defaultGlobalVariables).map(([key, value]) => (
-                                    <div key={key} className="flex items-center gap-2">
-                                        <span className="min-w-0 flex-1 truncate text-sm text-gray-300">
-                                            <code className="rounded bg-zinc-800 px-1 py-0.5">{key}</code>
+                                    <div key={key} className="flex items-center gap-3">
+                                        <span className="min-w-0 flex-1 truncate text-sm text-zinc-400">
+                                            <code className="rounded-lg bg-zinc-800/80 px-2.5 py-1 font-mono text-[13px] text-teal-400">{key}</code>
                                         </span>
                                         <input
                                             type="text"
                                             value={value}
                                             onChange={(e) => setDefaultGlobalVariable(key, e.target.value)}
-                                            className="w-32 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+                                            className="w-36 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-3 py-2.5 text-sm text-white transition-all duration-200 focus:border-teal-400/50 focus:outline-none focus:ring-2 focus:ring-teal-400/20"
                                         />
                                         <button
                                             onClick={() => removeDefaultGlobalVariable(key)}
-                                            className="rounded p-1 text-gray-400 transition-colors hover:bg-red-900/50 hover:text-red-300"
+                                            className="rounded-xl p-2.5 text-zinc-600 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400"
                                             aria-label={`Remove ${key}`}
                                         >
-                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                         </button>
@@ -261,7 +261,7 @@ function SettingsSidebar() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="mb-3 text-sm text-gray-500">No default global variables set.</p>
+                            <p className="mb-4 text-sm text-zinc-600">No default values set yet. Add variables you use across batches.</p>
                         )}
 
                         <div className="flex gap-2">
@@ -270,19 +270,19 @@ function SettingsSidebar() {
                                 value={newVariableKey}
                                 onChange={(e) => setNewVariableKey(e.target.value)}
                                 placeholder="Variable name"
-                                className="w-28 rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                                className="w-32 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-3 py-2.5 text-sm text-white placeholder-zinc-600 transition-all duration-200 focus:border-teal-400/50 focus:outline-none focus:ring-2 focus:ring-teal-400/20"
                             />
                             <input
                                 type="text"
                                 value={newVariableValue}
                                 onChange={(e) => setNewVariableValue(e.target.value)}
                                 placeholder="Value"
-                                className="flex-1 rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                                className="flex-1 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-3 py-2.5 text-sm text-white placeholder-zinc-600 transition-all duration-200 focus:border-teal-400/50 focus:outline-none focus:ring-2 focus:ring-teal-400/20"
                             />
                             <button
                                 onClick={handleAddVariable}
                                 disabled={!newVariableKey.trim()}
-                                className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-teal-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-600"
                             >
                                 Add
                             </button>
@@ -290,20 +290,20 @@ function SettingsSidebar() {
                     </section>
 
                     {/* Import/Export Section */}
-                    <section className="mb-6">
-                        <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-400">
+                    <section className="mb-8">
+                        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500">
                             Backup & Restore
                         </h3>
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                             <button
                                 onClick={handleExportSettings}
-                                className="flex-1 rounded bg-zinc-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-600"
+                                className="flex-1 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-4 py-3 text-sm font-semibold text-zinc-300 transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
                             >
                                 Export Settings
                             </button>
                             <button
                                 onClick={handleImportClick}
-                                className="flex-1 rounded bg-zinc-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-600"
+                                className="flex-1 rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-4 py-3 text-sm font-semibold text-zinc-300 transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
                             >
                                 Import Settings
                             </button>
@@ -318,29 +318,29 @@ function SettingsSidebar() {
                     </section>
 
                     {/* Data Management Section */}
-                    <section className="mb-6">
-                        <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-400">
+                    <section className="mb-8">
+                        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500">
                             Data Management
                         </h3>
                         <button
                             onClick={handleClearIndexedDB}
-                            className="w-full rounded bg-red-900/50 px-3 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-900/70"
+                            className="w-full rounded-xl bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400 ring-1 ring-red-500/20 transition-all duration-200 hover:bg-red-500/20"
                         >
-                            Clear All Data (IndexedDB)
+                            Clear All Stored Data
                         </button>
-                        <p className="mt-1 text-xs text-gray-500">
-                            This will remove all stored images and reset the current session.
+                        <p className="mt-2 text-xs text-zinc-600">
+                            Removes all images and resets your current session. Settings are preserved.
                         </p>
                     </section>
 
                     {/* Reset Section */}
-                    <section className="mb-6">
-                        <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-400">
+                    <section className="mb-8">
+                        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500">
                             Reset
                         </h3>
                         <button
                             onClick={handleResetToDefaults}
-                            className="w-full rounded border border-zinc-600 px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-zinc-800"
+                            className="w-full rounded-xl border border-zinc-700/80 px-4 py-3 text-sm font-semibold text-zinc-400 transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-900 hover:text-zinc-300"
                         >
                             Reset Settings to Defaults
                         </button>
@@ -349,17 +349,17 @@ function SettingsSidebar() {
                     {/* Account Section */}
                     {isAuthenticated && (
                         <section>
-                            <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-400">
+                            <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500">
                                 Account
                             </h3>
                             {userName && (
-                                <p className="mb-3 text-sm text-gray-300">
-                                    Signed in as <span className="font-medium text-white">{userName}</span>
+                                <p className="mb-4 text-sm text-zinc-400">
+                                    Signed in as <span className="font-bold text-white">{userName}</span>
                                 </p>
                             )}
                             <button
                                 onClick={logout}
-                                className="w-full rounded bg-zinc-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-600"
+                                className="w-full rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-4 py-3 text-sm font-semibold text-zinc-300 transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
                             >
                                 Sign out
                             </button>
@@ -372,3 +372,4 @@ function SettingsSidebar() {
 }
 
 export { SettingsSidebar };
+

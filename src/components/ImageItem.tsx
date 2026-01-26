@@ -74,3 +74,4 @@ export function ImageItem({ id }: ImageItemProperties) {
         </div>
     );
 }
+
