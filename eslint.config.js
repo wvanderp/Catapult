@@ -8,7 +8,7 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import jsdoc from "eslint-plugin-jsdoc";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "coverage"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [

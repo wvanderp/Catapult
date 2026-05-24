@@ -9,9 +9,8 @@ import { formatExifDateOnly, formatExifDateTime } from "./exifUtils";
  * @returns Utility context object with extension, 1-based index, date, and dateTime
  */
 export function createUtilityContext(image: Image, index: number) {
-  const extension = image.name.includes(".")
-    ? image.name.split(".").pop()?.toLowerCase() ?? ""
-    : "";
+  const dotIndex = image.name.lastIndexOf(".");
+  const extension = dotIndex === -1 ? "" : image.name.slice(dotIndex + 1).toLowerCase();
 
   const dateValue =
     image.exifData?.DateTimeOriginal ?? image.exifData?.CreateDate;

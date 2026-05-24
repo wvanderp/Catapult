@@ -66,6 +66,14 @@ describe('extractCategories', () => {
     expect(extractCategories('[[Category:Birds]]\n[[category:Birds]]')).toEqual(['Birds']);
   });
 
+  // ── Whitespace-only category names ─────────────────────────────────────────
+
+  it('ignores category names that are whitespace-only after trimming (line 24 false branch)', () => {
+    // The regex captures "   " (spaces allowed by [^\]|]+), but after trim() the
+    // name is "", which is falsy → category is not added
+    expect(extractCategories('[[Category:   ]]')).toEqual([]);
+  });
+
   // ── Unicode and special characters ─────────────────────────────────────────
 
   it('handles category names with unicode characters', () => {

@@ -175,6 +175,11 @@ describe("normalizeMediaWikiFilename", () => {
       expect(normalizeMediaWikiFilename("my file name")).toBe("My_file_name");
     });
 
+    it("should return empty string when filename normalizes to nothing (only underscores, no extension)", () => {
+      // "___" → collapse to "_" → trim leading/trailing underscores → "" → length 0, skip capitalize
+      expect(normalizeMediaWikiFilename("___")).toBe("");
+    });
+
     it("should handle filename with multiple dots", () => {
       expect(normalizeMediaWikiFilename("file.name.with.dots.jpg")).toBe(
         "File.name.with.dots.jpg"

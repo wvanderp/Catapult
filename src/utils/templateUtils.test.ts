@@ -53,6 +53,11 @@ describe("extractTemplateKeys", () => {
     const keys = extractTemplateKeys(template);
     expect(keys).toEqual(["name"]);
   });
+
+  it("should ignore empty <<<>>> brackets (match[1] falsy branch)", () => {
+    const keys = extractTemplateKeys("before <<<>>> after");
+    expect(keys).toEqual([]);
+  });
 });
 
 describe("applyTemplate", () => {
@@ -895,5 +900,51 @@ describe("extractTemplateKeys with conditionals", () => {
     const template = "<<<if { spaced }>>>Content<<<endif>>>";
     const keys = extractTemplateKeys(template);
     expect(keys).toContain("spaced");
+  });
+});
+
+describe("processConditionals malformed template handling", () => {
+  it("should treat malformed if tag with no closing }>>> as literal text (lines 134-135)", () => {
+    // No }>>> means variableEnd === -1 → append from ifStart and break
+    const result = processConditionals("prefix <<<if {no-closing-brace", {});
+    expect(result).toBe("prefix <<<if {no-closing-brace");
+  });
+
+  it("should treat if with no matching endif as literal (lines 152, 172-174)", () => {
+    // No <<<endif>>> → while loop breaks when nextEndif === -1, endifPos stays -1
+    const result = processConditionals(
+      "<<<if {name}>>>content without endif",
+      { name: "value" },
+    );
+    // The opening <<<if {name}>>> is emitted literally, then the remaining content
+    expect(result).toBe("<<<if {name}>>>content without endif");
+  });
+
+  it("should treat unmatched nested if as literal when only one endif present", () => {
+    // 2 ifs, 1 endif → outer if has no matching endif → outer if tag emitted literally
+    const result = processConditionals(
+      "<<<if {outer}>>><<<if {inner}>>>text<<<endif>>>",
+      { outer: "yes", inner: "yes" },
+    );
+    // Outer if has no matching endif, so outer <<<if {outer}>>> is literal;
+    // the inner block is still processed normally
+    expect(result).toBe("<<<if {outer}>>>text");
+  });
+});
+
+describe("applyTemplate safety checks and maxIterations", () => {
+  it("should preserve literal <<<if {var}>>> from malformed conditional (lines 281, 309)", () => {
+    // processConditionals emits <<<if {name}>>> literally (no matching endif).
+    // The while-loop safety check (line 281) and final-pass safety check (line 309)
+    // both return the token unchanged rather than replacing with <<<missing>>>.
+    const result = applyTemplate("<<<if {name}>>>content", { name: "value" });
+    expect(result).toBe("<<<if {name}>>>content");
+  });
+
+  it("should replace unresolvable variable with missing placeholder on last iteration (line 296)", () => {
+    // maxIterations=1: on iteration 1 (=== maxIterations), <<<unknown>>> is unresolvable
+    // so the replacement returns MISSING_PLACEHOLDER immediately
+    const result = applyTemplate("<<<a>>> <<<unknown>>>", { a: "hello" }, 1);
+    expect(result).toBe("hello <<<missing>>>");
   });
 });

@@ -60,7 +60,7 @@ export function base64ToFile(
   const byteCharacters = atob(base64);
   const byteNumbers = Array.from(
     { length: byteCharacters.length },
-    (_, index) => byteCharacters.codePointAt(index) ?? 0
+    (_, index) => byteCharacters.codePointAt(index)!
   );
   const byteArray = new Uint8Array(byteNumbers);
   return new File([byteArray], filename, { type: mimeType });

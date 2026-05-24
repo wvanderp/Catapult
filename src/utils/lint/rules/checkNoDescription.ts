@@ -33,7 +33,7 @@ export const checkNoDescription: LintRule = (wikitext, imageId): LintIssue | nul
     };
   }
 
-  const value = match[1]?.trim() ?? '';
+  const value = match[1].trim();
 
   if (value === '' || value.includes(MISSING_PLACEHOLDER)) {
     return {
