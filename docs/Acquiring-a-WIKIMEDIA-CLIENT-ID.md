@@ -8,15 +8,20 @@ Make sure that the settings are like:
 
 <https://meta.wikimedia.org/wiki/Special:OAuthListConsumers/view/28fa070cda77c0f1757bbf82b69223d8>
 
-most importantly the Redirect URI should be set to:
+## values
 
-```url
-http://localhost:5173/Catapult/auth/callback
-```
-
-and the key need to grant access to:
+**Application name**: `Catapult Uploader`
+**Consumer version**: `1.0`
+**Application description**:
 
 ```text
-Interact with pages
-Interact with media
+Catapult is a modern batch upload tool for Wikimedia Commons. It enables users to upload large sets of images from events, conferences, or photo sessions with consistent metadata, template-based descriptions, automatic EXIF extraction, and per-image customization — all through a streamlined, minimal-effort workflow.
 ```
+
+**OAuth "callback" URL**: `https://wvanderp.github.io/Catapult/auth/callback`
+**Applicable projects**: `commonswiki`
+**Grants**:
+
+- `Create, edit, and move pages`
+- `Upload new files`
+- `Upload, replace, and move files`
