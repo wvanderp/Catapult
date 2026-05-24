@@ -1,7 +1,8 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { useImageSetStore } from '../store/imageSetStore';
+import { useLintResults } from '../hooks/useLintResults';
 
-type TabPath = '/upload' | '/variables' | '/fillout' | '/review';
+type TabPath = '/upload' | '/variables' | '/fillout' | '/check' | '/review';
 
 interface Tab {
   path: TabPath;
@@ -42,9 +43,19 @@ const tabs: Tab[] = [
     ),
   },
   {
+    path: '/check',
+    label: 'Check',
+    step: 4,
+    icon: (
+      <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    ),
+  },
+  {
     path: '/review',
     label: 'Review',
-    step: 4,
+    step: 5,
     icon: (
       <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -55,7 +66,7 @@ const tabs: Tab[] = [
 
 /**
  * TabNavigation displays the step-by-step navigation tabs for the upload workflow.
- * Shows badges for image count and review progress.
+ * Shows badges for image count, reviewed count, and quality-check issue count.
  * Highlights the current active tab with visual indicators.
  * 
  * @returns The tab navigation component
@@ -63,9 +74,13 @@ const tabs: Tab[] = [
 export function TabNavigation() {
   const location = useLocation();
   const images = useImageSetStore((state) => state.imageSet.images);
+  const { issues } = useLintResults();
 
   const imageCount = Object.keys(images).length;
   const reviewedCount = Object.values(images).filter((img) => img.reviewed).length;
+
+  const lintErrorCount = issues.filter((issue) => issue.severity === 'error').length;
+  const lintWarningCount = issues.filter((issue) => issue.severity === 'warning').length;
 
   /**
    * Get the badge content for a tab if applicable.
@@ -77,10 +92,24 @@ export function TabNavigation() {
     if (path === '/upload' && imageCount > 0) {
       return `${imageCount}`;
     }
+    if (path === '/check' && imageCount > 0 && (lintErrorCount > 0 || lintWarningCount > 0)) {
+      return lintErrorCount > 0 ? `${lintErrorCount}` : `${lintWarningCount}`;
+    }
     if (path === '/review' && imageCount > 0) {
       return `${reviewedCount}/${imageCount}`;
     }
     return undefined;
+  }
+
+  /**
+   * Get whether the badge for a tab should use the error colour (red).
+   * Warnings use the default (amber-ish) badge styling.
+   *
+   * @param path - The path of the tab to check
+   * @returns True if the badge should be shown in red
+   */
+  function isBadgeError(path: TabPath): boolean {
+    return path === '/check' && lintErrorCount > 0;
   }
 
   /**
@@ -160,9 +189,9 @@ export function TabNavigation() {
                 {badge && (
                   <span className={`
                     rounded-full px-2 py-0.5 text-xs font-bold transition-all
-                    ${isActive
-                      ? 'bg-white/15 text-white'
-                      : 'bg-zinc-800 text-zinc-400'
+                    ${isBadgeError(tab.path)
+                      ? 'bg-red-500/20 text-red-400'
+                      : (isActive ? 'bg-white/15 text-white' : 'bg-zinc-800 text-zinc-400')
                     }
                   `}>
                     {badge}

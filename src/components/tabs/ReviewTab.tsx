@@ -5,6 +5,7 @@ import { applyTemplate } from '../../utils/templateUtils';
 import { createUtilityContext } from '../../utils/utilityContext';
 import { getImageAsFile } from '../../utils/imageBlobStorage';
 import { useImageUrl } from '../../hooks/useImageData';
+import { useLintResults } from '../../hooks/useLintResults';
 
 import { useWikimediaCommons, type UploadWarning } from '../../hooks/useWikimediaCommons';
 
@@ -297,6 +298,10 @@ export function ReviewTab() {
   const navigate = useNavigate();
 
   const { uploadFile, isAuthenticated } = useWikimediaCommons();
+  const { issues: lintIssues } = useLintResults();
+  const lintErrorCount = lintIssues.filter((issue) => issue.severity === 'error').length;
+  const lintWarningCount = lintIssues.filter((issue) => issue.severity === 'warning').length;
+  const hasLintIssues = lintIssues.length > 0;
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadWarnings, setUploadWarnings] = useState<Record<string, { warnings: UploadWarning[]; filekey?: string; file: File; title: string; description: string }>>({});
@@ -476,6 +481,30 @@ export function ReviewTab() {
           Verify each image's details, then mark them ready for upload
         </p>
       </div>
+
+      {/* Lint issues banner — informational only, does not block upload */}
+      {hasLintIssues && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-4 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <svg className="size-5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="font-semibold text-amber-400">
+              {lintErrorCount > 0 && `${lintErrorCount} ${lintErrorCount === 1 ? 'error' : 'errors'}`}
+              {lintErrorCount > 0 && lintWarningCount > 0 && ' and '}
+              {lintWarningCount > 0 && `${lintWarningCount} ${lintWarningCount === 1 ? 'warning' : 'warnings'}`}
+              {' found'}
+            </span>
+            <span className="text-sm text-zinc-400">— you can still upload, but consider fixing these first</span>
+          </div>
+          <Link
+            to="/check"
+            className="shrink-0 rounded-lg bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-400 transition-all hover:bg-amber-500/25"
+          >
+            View issues
+          </Link>
+        </div>
+      )}
 
       {/* Progress summary */}
       <div className="flex items-center justify-between rounded-2xl border border-zinc-800/60 bg-zinc-900/60 p-5 backdrop-blur-md">

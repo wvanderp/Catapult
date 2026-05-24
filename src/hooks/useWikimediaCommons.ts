@@ -2,6 +2,10 @@ import axios from "axios";
 import { generateCodeVerifier, generateCodeChallenge } from "../utils/pkce";
 import { useAuthStore } from "../store/authStore";
 import { normalizeMediaWikiFilename } from "../utils/mediawikiUtils";
+import { checkCategoriesExist } from "../utils/wikimediaApi";
+
+// Re-export so existing callers that import checkCategoriesExist from here still work.
+export { checkCategoriesExist } from "../utils/wikimediaApi";
 
 const CLIENT_ID = import.meta.env.VITE_WIKIMEDIA_CLIENT_ID! as string;
 
@@ -668,8 +672,12 @@ export function useWikimediaCommons() {
     checkAuth,
     getCsrfToken,
     uploadFile,
+    checkCategoriesExist,
   };
 }
+
+// checkCategoriesExist has been moved to src/utils/wikimediaApi.ts.
+// It is imported above and re-exported for backward compatibility.
 
 /**
  * Parse MediaWiki upload warnings into a structured format

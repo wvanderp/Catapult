@@ -4,7 +4,7 @@ import './index.css'
 import { RouterProvider, createRouter, createRootRoute, createRoute, redirect } from '@tanstack/react-router'
 import { Root } from './routes/Root'
 import { AuthCallback } from './routes/AuthCallback'
-import { UploadTab, VariablesTab, FillOutTab, ReviewTab } from './components/tabs'
+import { UploadTab, VariablesTab, FillOutTab, CheckTab, ReviewTab } from './components/tabs'
 import { TabLayout } from './components/TabLayout'
 
 const rootRoute = createRootRoute({
@@ -43,6 +43,14 @@ const filloutRoute = createRoute({
   },
 })
 
+const checkRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/check',
+  component: function CheckPage() {
+    return <TabLayout><CheckTab /></TabLayout>
+  },
+})
+
 const reviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/review',
@@ -62,6 +70,7 @@ const routeTree = rootRoute.addChildren([
   uploadRoute,
   variablesRoute,
   filloutRoute,
+  checkRoute,
   reviewRoute,
   authCallbackRoute,
 ])

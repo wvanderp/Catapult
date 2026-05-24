@@ -21,11 +21,7 @@ function getGitCommit(): string {
 export default defineConfig({
   base: "/Catapult/",
   plugins: [
-    react({
-      babel: {
-        plugins: [["babel-plugin-react-compiler"]],
-      },
-    }),
+    react(),
     tailwindcss(),
   ],
   define: {

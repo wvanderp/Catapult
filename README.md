@@ -101,8 +101,7 @@ Catapult features a powerful template system with variable interpolation, EXIF d
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint and TypeScript type checking
-- `npm test` - Run tests in watch mode
-- `npm run test:run` - Run tests once
+- `npm run test` - Run tests once
 
 ## Project Structure
 
@@ -131,7 +130,7 @@ Contributions are welcome! Please ensure:
 
 - Code follows the project's TypeScript and ESLint configuration
 - New features include appropriate tests
-- All tests pass (`npm run test:run`)
+- All tests pass (`npm run test`)
 - Code is linted (`npm run lint`)
 
 ## License

@@ -97,8 +97,6 @@ describe("extractExifData", () => {
 
     const exifData = await extractExifData(testFile);
 
-    console.log("Extracted EXIF data:", exifData);
-
     expect(typeof exifData).toBe("object");
     expect(exifData).not.toBeNull();
 
