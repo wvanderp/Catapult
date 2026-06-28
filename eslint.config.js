@@ -33,7 +33,7 @@ export default defineConfig([
           },
         },
       ],
-      "unicorn/prevent-abbreviations": [
+      "unicorn/name-replacements": [
         "warn",
         {
           replacements: {

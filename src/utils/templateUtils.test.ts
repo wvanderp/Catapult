@@ -439,7 +439,7 @@ describe("processConditionals", () => {
 
     it("should exclude content when variable is whitespace-only string", () => {
       const template = "<<<if {name}>>>Hello <<<name>>><<<endif>>>";
-      const result = processConditionals(template, { name: "   " });
+      const result = processConditionals(template, { name: ' '.repeat(3) });
       expect(result).toBe("");
     });
 

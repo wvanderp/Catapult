@@ -150,7 +150,7 @@ export async function getImageBase64(id: string): Promise<string | undefined> {
     reader.addEventListener("load", () => {
       const result = reader.result as string;
       // Remove the data URL prefix (e.g., "data:image/png;base64,")
-      const base64 = result.split(",")[1];
+      const base64 = result.split(",", 2)[1];
       resolve(base64);
     });
     reader.addEventListener("error", () => reject(reader.error));
@@ -213,10 +213,12 @@ export async function removeImageBlobs(ids: string[]): Promise<void> {
         }
       });
       request.addEventListener("error", () => {
-        if (!hasError) {
-          hasError = true;
-          reject(request.error);
+        if (hasError) {
+        	return;
         }
+
+        hasError = true;
+        reject(request.error);
       });
     }
 

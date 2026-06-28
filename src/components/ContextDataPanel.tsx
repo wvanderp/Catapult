@@ -182,8 +182,8 @@ export function ContextDataPanel({
         // EXIF data section - dynamically get all EXIF fields
         const exifItems: ContextItem[] = [];
         const exifFields = showAllExif
-            ? Object.keys(exifData).toSorted()
-            : DEFAULT_EXIF_FIELDS.filter(field => field in exifData);
+            ? Object.keys(exifData).toSorted((a, b) => a.localeCompare(b))
+            : DEFAULT_EXIF_FIELDS.filter(field => Object.hasOwn(exifData, field));
 
         for (const field of exifFields) {
             if (exifData[field] !== undefined && exifData[field] !== null) {

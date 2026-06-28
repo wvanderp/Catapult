@@ -217,11 +217,13 @@ export function FillOutTab() {
    * Only works if there is a previous image in the list.
    */
   function copyFromPrevious() {
-    if (safeCurrentIndex > 0) {
-      const previousId = imageIds[safeCurrentIndex - 1];
-      const previousImage = images[previousId];
-      updateImageKeys(currentId, { ...previousImage.keys });
+    if (!(safeCurrentIndex > 0)) {
+    	return;
     }
+
+    const previousId = imageIds[safeCurrentIndex - 1];
+    const previousImage = images[previousId];
+    updateImageKeys(currentId, { ...previousImage.keys });
   }
 
   /**

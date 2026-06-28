@@ -314,7 +314,7 @@ export function ReviewTab() {
     : imageKeys;
 
   const reviewedCount = Object.values(images).filter((img) => img.reviewed).length;
-  const allReviewed = reviewedCount === imageIds.length && imageIds.length > 0;
+  const isAllReviewed = reviewedCount === imageIds.length && imageIds.length > 0;
 
   // Generate titles and descriptions for all images
   const processedImages = useMemo(() => {
@@ -509,7 +509,7 @@ export function ReviewTab() {
       {/* Progress summary */}
       <div className="flex items-center justify-between rounded-2xl border border-zinc-800/60 bg-zinc-900/60 p-5 backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <div className={`text-lg font-bold ${allReviewed ? 'text-emerald-400' : 'text-zinc-300'}`}>
+          <div className={`text-lg font-bold ${isAllReviewed ? 'text-emerald-400' : 'text-zinc-300'}`}>
             <span className="text-2xl">{reviewedCount}</span> of {imageIds.length} ready
           </div>
           <button
@@ -636,8 +636,8 @@ export function ReviewTab() {
 
         <button
           onClick={handleUploadAll}
-          disabled={!allReviewed || isUploading || !isAuthenticated}
-          className={`inline-flex items-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all duration-200 ${allReviewed && !isUploading && isAuthenticated
+          disabled={!isAllReviewed || isUploading || !isAuthenticated}
+          className={`inline-flex items-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all duration-200 ${isAllReviewed && !isUploading && isAuthenticated
             ? 'bg-emerald-600 text-white hover:bg-emerald-500'
             : 'cursor-not-allowed bg-zinc-800 text-zinc-600'
             }`}

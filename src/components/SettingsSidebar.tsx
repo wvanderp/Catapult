@@ -93,7 +93,7 @@ function SettingsSidebar() {
 
         const link = document.createElement('a');
         link.href = url;
-        link.download = `catapult-settings-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = `catapult-settings-${new Date().toISOString().split('T', 1)[0]}.json`;
         document.body.append(link);
         link.click();
         link.remove();

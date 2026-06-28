@@ -76,7 +76,7 @@ describe('checkCategoryExists', () => {
 
   it('handles a category name that is only whitespace', () => {
     // The rule itself does not validate the category name; it just checks exists
-    const result = checkCategoryExists('   ', false, IMAGE_ID);
+    const result = checkCategoryExists(' '.repeat(3), false, IMAGE_ID);
     expect(result?.code).toBe('category-not-found');
   });
 });

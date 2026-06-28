@@ -65,8 +65,8 @@ export function ImageViewer({ imageUrl, imageName, isOpen, onClose }: ImageViewe
             }
         };
 
-        globalThis.addEventListener('keydown', handleKeyDown);
-        return () => globalThis.removeEventListener('keydown', handleKeyDown);
+        addEventListener('keydown', handleKeyDown);
+        return () => removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose, handleZoomIn, handleZoomOut, handleResetZoom]);
 
     const handleWheel = (event: React.WheelEvent) => {
@@ -76,13 +76,16 @@ export function ImageViewer({ imageUrl, imageName, isOpen, onClose }: ImageViewe
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        if (scale > 1) {
-            setIsDragging(true);
-            setDragStart({
-                x: e.clientX - position.x,
-                y: e.clientY - position.y,
-            });
+        if (scale <= 1) {
+        	return;
         }
+
+        setIsDragging(true);
+        setDragStart({
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+        });
+
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {

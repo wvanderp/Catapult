@@ -176,13 +176,13 @@ export function UploadTab() {
 
   // Sync imageOrder with images for backwards compatibility
   const imageKeys = Object.keys(images);
-  const needsSync = imageKeys.length > 0 && imageOrder.length === 0;
+  const isNeedsSync = imageKeys.length > 0 && imageOrder.length === 0;
 
   React.useEffect(() => {
-    if (needsSync) {
+    if (isNeedsSync) {
       setImageOrder(imageKeys);
     }
-  }, [needsSync, imageKeys, setImageOrder]);
+  }, [isNeedsSync, imageKeys, setImageOrder]);
 
   // Filter imageOrder to only include existing images (handles deleted images)
   const imageIds = imageOrder.length > 0
@@ -238,7 +238,7 @@ export function UploadTab() {
           const result = e.target?.result as string;
           if (result) {
             const [prefix, base64] = result.split(',');
-            const mimeType = prefix.split(':')[1].split(';')[0];
+            const mimeType = prefix.split(':', 2)[1].split(';', 1)[0];
 
             addImage({
               file: base64,
@@ -275,28 +275,30 @@ export function UploadTab() {
     const files = event.dataTransfer.files;
     if (files) {
       for (const file of files) {
-        if (file.type.startsWith('image/')) {
-          // Extract EXIF data first (before FileReader consumes the file)
-          const exifData = await extractExifData(file);
-
-          const reader = new FileReader();
-          reader.addEventListener('load', (e) => {
-            const result = e.target?.result as string;
-            if (result) {
-              const [prefix, base64] = result.split(',');
-              const mimeType = prefix.split(':')[1].split(';')[0];
-
-              addImage({
-                file: base64,
-                name: file.name,
-                mimeType,
-                keys: {},
-                exifData,
-              });
-            }
-          });
-          reader.readAsDataURL(file);
+        if (!file.type.startsWith('image/')) {
+        	continue;
         }
+
+        // Extract EXIF data first (before FileReader consumes the file)
+        const exifData = await extractExifData(file);
+
+        const reader = new FileReader();
+        reader.addEventListener('load', (e) => {
+          const result = e.target?.result as string;
+          if (result) {
+            const [prefix, base64] = result.split(',');
+            const mimeType = prefix.split(':', 2)[1].split(';', 1)[0];
+
+            addImage({
+              file: base64,
+              name: file.name,
+              mimeType,
+              keys: {},
+              exifData,
+            });
+          }
+        });
+        reader.readAsDataURL(file);
       }
     }
   }

@@ -11,19 +11,21 @@ export function extractTemplateKeys(template: string): string[] {
   const keys = new Set<string>();
   let match;
   while ((match = regex.exec(template)) !== null) {
-    if (match[1]) {
-      const trimmed = match[1].trim();
-      // Skip control flow keywords: if {variable} and endif
-      if (trimmed.startsWith("if {") || trimmed === "endif") {
-        // Extract the variable name from if statements for key tracking
-        const ifMatch = /^if\s*\{(.+)\}$/.exec(trimmed);
-        if (ifMatch && ifMatch[1]) {
-          keys.add(ifMatch[1].trim());
-        }
-        continue;
-      }
-      keys.add(trimmed);
+    if (!match[1]) {
+    	continue;
     }
+
+    const trimmed = match[1].trim();
+    // Skip control flow keywords: if {variable} and endif
+    if (trimmed.startsWith("if {") || trimmed === "endif") {
+      // Extract the variable name from if statements for key tracking
+      const ifMatch = /^if\s*\{(.+)\}$/.exec(trimmed);
+      if (ifMatch && ifMatch[1]) {
+        keys.add(ifMatch[1].trim());
+      }
+      continue;
+    }
+    keys.add(trimmed);
   }
   return [...keys];
 }
@@ -67,10 +69,7 @@ function isTruthyValue(value: unknown): boolean {
   if (value === undefined || value === null) {
     return false;
   }
-  if (typeof value === "string" && value.trim() === "") {
-    return false;
-  }
-  return true;
+  return !(typeof value === "string" && value.trim() === "");
 }
 
 /**

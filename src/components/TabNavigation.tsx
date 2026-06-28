@@ -90,10 +90,10 @@ export function TabNavigation() {
    */
   function getBadge(path: TabPath): string | undefined {
     if (path === '/upload' && imageCount > 0) {
-      return `${imageCount}`;
+      return String(imageCount);
     }
     if (path === '/check' && imageCount > 0 && (lintErrorCount > 0 || lintWarningCount > 0)) {
-      return lintErrorCount > 0 ? `${lintErrorCount}` : `${lintWarningCount}`;
+      return lintErrorCount > 0 ? String(lintErrorCount) : String(lintWarningCount);
     }
     if (path === '/review' && imageCount > 0) {
       return `${reviewedCount}/${imageCount}`;

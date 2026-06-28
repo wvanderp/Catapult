@@ -30,7 +30,7 @@ const OAUTH_SCOPES = [
 // Construct redirect URI based on current location to support both local dev and production
 // Assuming the app is served at /catapult/ or root.
 // We need to match what is registered in Wikimedia.
-const REDIRECT_URI = `${globalThis.location.origin}/Catapult/auth/callback`;
+const REDIRECT_URI = `${location.origin}/Catapult/auth/callback`;
 const AUTH_BASE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2";
 const API_URL = "https://commons.wikimedia.org/w/api.php";
 
@@ -174,12 +174,11 @@ export function useWikimediaCommons() {
             expiresAt: Math.floor(Date.now() / 1000) + data.expires_in,
           });
           return data.access_token;
-        } else {
-          console.error(
-            "[getValidAccessToken] Token refresh failed with status",
-            response.status
-          );
         }
+        console.error(
+          "[getValidAccessToken] Token refresh failed with status",
+          response.status
+        );
       } catch (error) {
         console.error("[getValidAccessToken] Failed to refresh token", error);
       }
@@ -291,7 +290,7 @@ export function useWikimediaCommons() {
    *
    */
   async function handleCallback() {
-    const url = new URL(globalThis.location.href);
+    const url = new URL(location.href);
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
@@ -402,7 +401,7 @@ export function useWikimediaCommons() {
       meta: "userinfo",
       uiprop: "groups|rights|blockinfo",
       format: "json",
-      origin: globalThis.location.origin,
+      origin: location.origin,
     });
 
     console.log("[checkAuth] Checking auth status with parameters:", {
@@ -772,5 +771,5 @@ async function login() {
     code_challenge_method: "S256",
   });
 
-  globalThis.location.href = `${AUTH_BASE_URL}/authorize?${parameters.toString()}`;
+  location.assign(`${AUTH_BASE_URL}/authorize?${parameters.toString()}`);
 }

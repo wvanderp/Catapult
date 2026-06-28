@@ -92,7 +92,7 @@ function ImageCheckRow({
 
   const hasErrors = issues.some((issue) => issue.severity === 'error');
   const hasWarnings = issues.some((issue) => issue.severity === 'warning');
-  const allClear = issues.length === 0;
+  const isAllClear = issues.length === 0;
 
   /**
    * Derive the left border colour based on the worst severity.
@@ -130,7 +130,7 @@ function ImageCheckRow({
             <span className="truncate text-sm text-zinc-400">{imageName}</span>
           </div>
 
-          {allClear ? (
+          {isAllClear ? (
             <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
               <svg className="size-4" fill="currentColor" viewBox="0 0 20 20">
                 <path
