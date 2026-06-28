@@ -77,13 +77,13 @@ function parseAndLogJWT(token: string) {
 
 export interface UploadWarning {
   type:
-    | "duplicate"
-    | "exists"
-    | "duplicate-archive"
-    | "was-deleted"
-    | "badfilename"
-    | "filetype-banned"
-    | "unknown";
+  | "duplicate"
+  | "exists"
+  | "duplicate-archive"
+  | "was-deleted"
+  | "badfilename"
+  | "filetype-banned"
+  | "unknown";
   message: string;
   duplicateFiles?: string[];
 }
@@ -178,7 +178,8 @@ export function useWikimediaCommons() {
         console.error(
           "[getValidAccessToken] Token refresh failed with status",
           response.status
-        );
+        );
+
       } catch (error) {
         console.error("[getValidAccessToken] Failed to refresh token", error);
       }
@@ -357,14 +358,39 @@ export function useWikimediaCommons() {
 
       await fetchUserInfo(data.access_token);
     } catch (error) {
-      const errorMessage =
+      const errorPayload =
         axios.isAxiosError(error) && error.response
           ? error.response.data
           : String(error);
       console.error("[handleCallback] Token exchange failed", {
-        error: errorMessage,
+        error: errorPayload,
+        redirect_uri: REDIRECT_URI,
       });
-      throw new Error(`Token endpoint error: ${JSON.stringify(errorMessage)}`);
+
+      // Surface the server's hint (e.g. "Check the `client_secret` parameter")
+      // directly so the cause is obvious. The most common cause of the
+      // client_secret hint is the OAuth consumer being registered as
+      // confidential while the app is a public SPA using PKCE.
+      const hint =
+        typeof errorPayload === "object" &&
+          errorPayload !== null &&
+          "hint" in errorPayload &&
+          typeof (errorPayload as { hint: unknown }).hint === "string"
+          ? (errorPayload as { hint: string }).hint
+          : undefined;
+
+      const detail =
+        typeof errorPayload === "object" && errorPayload !== null
+          ? (errorPayload as { error?: string; error_description?: string })
+          : { error: String(errorPayload) };
+
+      const friendly = hint?.includes("client_secret")
+        ? " The OAuth consumer is likely registered as confidential; for a public SPA it must be non-confidential (PKCE)."
+        : "";
+
+      throw new Error(
+        `Token endpoint error: ${JSON.stringify(detail)}${friendly}`
+      );
     }
   }
 
