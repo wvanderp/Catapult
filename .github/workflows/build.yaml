@@ -26,6 +26,8 @@ jobs:
 
       - name: npm run build
         run: npm run build
+        env:
+          VITE_WIKIMEDIA_CLIENT_ID: ${{ secrets.VITE_WIKIMEDIA_CLIENT_ID }}
 
       - name: push changes to remote
         run: |
