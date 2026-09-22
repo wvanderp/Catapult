@@ -95,10 +95,7 @@ export function TabNavigation() {
     if (path === '/check' && imageCount > 0 && (lintErrorCount > 0 || lintWarningCount > 0)) {
       return lintErrorCount > 0 ? String(lintErrorCount) : String(lintWarningCount);
     }
-    if (path === '/review' && imageCount > 0) {
-      return `${reviewedCount}/${imageCount}`;
-    }
-    return undefined;
+    return path === '/review' && imageCount > 0 ? `${reviewedCount}/${imageCount}` : undefined;
   }
 
   /**
@@ -142,10 +139,7 @@ export function TabNavigation() {
               if (isActive) {
                 return 'bg-teal-600 text-white';
               }
-              if (isPast) {
-                return 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30';
-              }
-              return 'bg-zinc-800/80 text-zinc-500 ring-1 ring-zinc-700/50 group-hover:ring-zinc-600/50';
+              return isPast ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-zinc-800/80 text-zinc-500 ring-1 ring-zinc-700/50 group-hover:ring-zinc-600/50';
             }
 
             /**
@@ -155,8 +149,7 @@ export function TabNavigation() {
              */
             function getTextStyle(): string {
               if (isActive) return 'text-white';
-              if (isPast) return 'text-zinc-400 hover:text-zinc-200';
-              return 'text-zinc-500 hover:text-zinc-300';
+              return isPast ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-300';
             }
 
             return (

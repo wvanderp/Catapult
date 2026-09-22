@@ -6,11 +6,17 @@ import {
 } from "../utils/imageBlobStorage";
 
 interface UseImageDataResult {
-  /** Object URL for displaying the image - automatically cleaned up when unmounted */
+  /**
+  Object URL for displaying the image - automatically cleaned up when unmounted
+   */
   imageUrl: string | undefined;
-  /** Whether the image is currently loading */
+  /**
+  Whether the image is currently loading
+   */
   isLoading: boolean;
-  /** Error message if loading failed */
+  /**
+  Error message if loading failed
+   */
   error: string | undefined;
 }
 
@@ -141,9 +147,13 @@ export function useImageUrl(imageId: string | undefined): UseImageDataResult {
 }
 
 interface UseImageFileResult {
-  /** Get the image as a File object for upload */
+  /**
+  Get the image as a File object for upload
+   */
   getFile: () => Promise<File | undefined>;
-  /** Get the base64 string (without data URL prefix) */
+  /**
+  Get the base64 string (without data URL prefix)
+   */
   getBase64: () => Promise<string | undefined>;
 }
 
@@ -212,10 +222,12 @@ export function releaseImageUrl(imageId: string): void {
   if (!cached) return;
 
   cached.refCount--;
-  if (cached.refCount <= 0) {
-    URL.revokeObjectURL(cached.url);
-    delete imageUrlCache[imageId];
+  if (!(cached.refCount <= 0)) {
+    return;
   }
+
+  URL.revokeObjectURL(cached.url);
+  delete imageUrlCache[imageId];
 }
 
 /**

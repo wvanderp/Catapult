@@ -9,7 +9,9 @@
 
 import type { LintIssue, LintRule } from '../types';
 
-/** Sentinel string inserted by the template engine for unresolved variables. */
+/**
+Sentinel string inserted by the template engine for unresolved variables.
+ */
 const MISSING_PLACEHOLDER = '<<<missing>>>';
 
 /**

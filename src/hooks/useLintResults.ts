@@ -13,9 +13,13 @@ import {
  * Return value of the `useLintResults` hook.
  */
 export interface LintResults {
-  /** All lint issues found across all images. */
+  /**
+  All lint issues found across all images.
+   */
   issues: LintIssue[];
-  /** True while async lint rules are in flight. */
+  /**
+  True while async lint rules are in flight.
+   */
   isCheckingCategories: boolean;
 }
 

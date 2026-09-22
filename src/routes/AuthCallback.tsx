@@ -30,9 +30,5 @@ export function AuthCallback() {
       });
   }, [handleCallback, navigate]);
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  return <div>Logging in...</div>;
+  return error ? <div>Error: {error}</div> : <div>Logging in...</div>;
 }

@@ -20,8 +20,7 @@ type UploadStatus = 'pending' | 'uploading' | 'success' | 'error' | 'warning';
  */
 function getProgressBarColor(errorCount: number, warningCount: number): string {
   if (errorCount > 0) return 'bg-amber-500';
-  if (warningCount > 0) return 'bg-orange-500';
-  return 'bg-emerald-500';
+  return warningCount > 0 ? 'bg-orange-500' : 'bg-emerald-500';
 }
 
 interface ReviewItemProperties {
@@ -155,8 +154,7 @@ function ReviewItem({ image, title, description, uploadStatus, onToggleReviewed 
     if (uploadStatus === 'error') return 'border-red-500/50';
     if (uploadStatus === 'warning') return 'border-orange-500/50';
     if (image.reviewed) return 'border-emerald-500/40';
-    if (hasUnfilledVariables) return 'border-amber-500/50';
-    return 'border-zinc-800/60';
+    return hasUnfilledVariables ? 'border-amber-500/50' : 'border-zinc-800/60';
   }
 
   /**
@@ -167,8 +165,7 @@ function ReviewItem({ image, title, description, uploadStatus, onToggleReviewed 
   function getBackgroundColor(): string {
     if (isUploaded) return 'bg-emerald-900/10';
     if (uploadStatus === 'error') return 'bg-red-900/10';
-    if (uploadStatus === 'warning') return 'bg-orange-900/10';
-    return 'bg-zinc-900/60';
+    return uploadStatus === 'warning' ? 'bg-orange-900/10' : 'bg-zinc-900/60';
   }
 
   return (

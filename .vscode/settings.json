@@ -1,0 +1,20 @@
+{
+    "cSpell.words": [
+        "badfilename",
+        "basepath",
+        "blockid",
+        "createeditmovepage",
+        "csrf",
+        "exif",
+        "ignorewarnings",
+        "mediawiki",
+        "pkce",
+        "tailwindcss",
+        "uploadeditmovefile",
+        "userinfo",
+        "wikimedia",
+        "wikitext"
+    ],
+    "editor.formatOnSave": true,
+    "files.autoSave": "onFocusChange"
+}

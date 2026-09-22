@@ -66,10 +66,7 @@ function getNestedValue(
  * @returns True if the value is truthy, false otherwise
  */
 function isTruthyValue(value: unknown): boolean {
-  if (value === undefined || value === null) {
-    return false;
-  }
-  return !(typeof value === "string" && value.trim() === "");
+  return value === undefined || value === null ? false : !(typeof value === "string" && value.trim() === "");
 }
 
 /**
@@ -304,10 +301,7 @@ export function applyTemplate(
   result = result.replaceAll(regex, (fullMatch, key) => {
     const trimmedKey = (key as string).trim();
     // Don't replace malformed conditional syntax
-    if (trimmedKey.startsWith("if {") || trimmedKey === "endif") {
-      return fullMatch;
-    }
-    return MISSING_PLACEHOLDER;
+    return trimmedKey.startsWith("if {") || trimmedKey === "endif" ? fullMatch : MISSING_PLACEHOLDER;
   });
 
   return result;

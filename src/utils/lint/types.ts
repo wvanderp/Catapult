@@ -6,20 +6,30 @@
  * problem, or `null` if no issue was found.
  */
 
-/** Severity level of a lint finding. */
+/**
+Severity level of a lint finding.
+ */
 export type LintSeverity = 'error' | 'warning';
 
 /**
  * A single lint finding produced by a lint rule.
  */
 export interface LintIssue {
-  /** How serious the issue is. */
+  /**
+   * How serious the issue is.
+   */
   severity: LintSeverity;
-  /** Short machine-readable identifier for the rule that produced this issue. */
+  /**
+  Short machine-readable identifier for the rule that produced this issue.
+   */
   code: string;
-  /** Human-friendly explanation of the problem. */
+  /**
+  Human-friendly explanation of the problem.
+   */
   message: string;
-  /** ID of the image this issue belongs to. */
+  /**
+  ID of the image this issue belongs to.
+   */
   imageId: string;
 }
 
@@ -36,9 +46,13 @@ export type LintRule = (wikitext: string, imageId: string) => LintIssue | null;
  * A rendered image ready to be inspected by lint rules.
  */
 export interface RenderedText {
-  /** The ID of the image. */
+  /**
+  The ID of the image.
+   */
   id: string;
-  /** The fully-rendered wikitext for the image. */
+  /**
+  The fully-rendered wikitext for the image.
+   */
   wikitext: string;
 }
 

@@ -93,7 +93,9 @@ export interface UploadResult {
   filename?: string;
   warnings?: UploadWarning[];
   error?: string;
-  /** If warnings were received, this contains the filekey to resume the upload */
+  /**
+  If warnings were received, this contains the filekey to resume the upload
+   */
   filekey?: string;
 }
 

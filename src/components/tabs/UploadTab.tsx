@@ -228,33 +228,35 @@ export function UploadTab() {
    */
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
-    if (files) {
-      for (const file of files) {
-        // Extract EXIF data first (before FileReader consumes the file)
-        const exifData = await extractExifData(file);
+    if (!files) {
+      return;
+    }
 
-        const reader = new FileReader();
-        reader.addEventListener('load', (e) => {
-          const result = e.target?.result as string;
-          if (result) {
-            const [prefix, base64] = result.split(',');
-            const mimeType = prefix.split(':', 2)[1].split(';', 1)[0];
+    for (const file of files) {
+      // Extract EXIF data first (before FileReader consumes the file)
+      const exifData = await extractExifData(file);
 
-            addImage({
-              file: base64,
-              name: file.name,
-              mimeType,
-              keys: {},
-              exifData,
-            });
-          }
-        });
-        reader.readAsDataURL(file);
-      }
-      // Reset input
-      if (fileInputReference.current) {
-        fileInputReference.current.value = '';
-      }
+      const reader = new FileReader();
+      reader.addEventListener('load', (e) => {
+        const result = e.target?.result as string;
+        if (result) {
+          const [prefix, base64] = result.split(',', 2);
+          const mimeType = prefix.split(':', 2)[1].split(';', 1)[0];
+
+          addImage({
+            file: base64,
+            name: file.name,
+            mimeType,
+            keys: {},
+            exifData,
+          });
+        }
+      });
+      reader.readAsDataURL(file);
+    }
+    // Reset input
+    if (fileInputReference.current) {
+      fileInputReference.current.value = '';
     }
   }
 
@@ -286,7 +288,7 @@ export function UploadTab() {
         reader.addEventListener('load', (e) => {
           const result = e.target?.result as string;
           if (result) {
-            const [prefix, base64] = result.split(',');
+            const [prefix, base64] = result.split(',', 2);
             const mimeType = prefix.split(':', 2)[1].split(';', 1)[0];
 
             addImage({

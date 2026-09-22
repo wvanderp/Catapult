@@ -101,8 +101,7 @@ function ImageCheckRow({
    */
   function getBorderColor(): string {
     if (hasErrors) return 'border-red-500/50';
-    if (hasWarnings) return 'border-amber-500/50';
-    return 'border-emerald-500/40';
+    return hasWarnings ? 'border-amber-500/50' : 'border-emerald-500/40';
   }
 
   return (

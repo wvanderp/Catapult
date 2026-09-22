@@ -131,8 +131,7 @@ export async function getImageObjectUrl(
   id: string,
 ): Promise<string | undefined> {
   const stored = await getImageBlob(id);
-  if (!stored) return undefined;
-  return URL.createObjectURL(stored.blob);
+  return stored ? URL.createObjectURL(stored.blob) : undefined;
 }
 
 /**
@@ -170,8 +169,7 @@ export async function getImageAsFile(
   filename: string,
 ): Promise<File | undefined> {
   const stored = await getImageBlob(id);
-  if (!stored) return undefined;
-  return new File([stored.blob], filename, { type: stored.mimeType });
+  return stored ? new File([stored.blob], filename, { type: stored.mimeType }) : undefined;
 }
 
 /**

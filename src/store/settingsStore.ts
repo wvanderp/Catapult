@@ -2,19 +2,29 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface SettingsState {
-  /** Whether the settings sidebar is open */
+  /**
+  Whether the settings sidebar is open
+   */
   isSidebarOpen: boolean;
 
-  /** Default template for new image sets */
+  /**
+  Default template for new image sets
+   */
   defaultTemplate: string;
 
-  /** Default title template for new image sets */
+  /**
+  Default title template for new image sets
+   */
   defaultTitleTemplate: string;
 
-  /** Default global variables for new image sets */
+  /**
+  Default global variables for new image sets
+   */
   defaultGlobalVariables: Record<string, string>;
 
-  /** Actions */
+  /**
+  Actions
+   */
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   setDefaultTemplate: (template: string) => void;
@@ -25,7 +35,9 @@ interface SettingsState {
   resetToDefaults: () => void;
 }
 
-/** Default template for description - exported for reuse in other stores */
+/**
+Default template for description - exported for reuse in other stores
+ */
 export const INITIAL_TEMPLATE = `=={{int:filedesc}}==
 {{Information
 |description={{en|1=<<<description>>>}}
@@ -39,7 +51,9 @@ export const INITIAL_TEMPLATE = `=={{int:filedesc}}==
 
 [[Category:<<<category>>>]]`;
 
-/** Default title template - exported for reuse in other stores */
+/**
+Default title template - exported for reuse in other stores
+ */
 export const INITIAL_TITLE_TEMPLATE =
   "<<<subject>>> - (<<<date>>>).<<<utility.extension>>>";
 

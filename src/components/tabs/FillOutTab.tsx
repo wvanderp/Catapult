@@ -36,10 +36,7 @@ export function FillOutTab() {
   // Falls back to Object.keys(images) for backwards compatibility with old data
   const imageIds = useMemo(() => {
     const imageKeys = Object.keys(images);
-    if (imageOrder.length > 0) {
-      return imageOrder.filter(id => id in images);
-    }
-    return imageKeys;
+    return imageOrder.length > 0 ? imageOrder.filter(id => id in images) : imageKeys;
   }, [images, imageOrder]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeFieldKey, setActiveFieldKey] = useState<string>();
@@ -94,10 +91,12 @@ export function FillOutTab() {
       const imageValue = image.keys[key];
       const globalValue = globalVariables[key];
       // If the image doesn't have a value but there's a global value, persist it
-      if ((imageValue === undefined || imageValue === '') && globalValue) {
-        updatedKeys[key] = globalValue;
-        hasChanges = true;
+      if (!((imageValue === undefined || imageValue === '') && globalValue)) {
+        continue;
       }
+
+      updatedKeys[key] = globalValue;
+      hasChanges = true;
     }
 
     if (hasChanges) {
@@ -132,8 +131,7 @@ export function FillOutTab() {
     const filledFields = keys.filter(key => getEffectiveValueForImage(fullImage.keys, key).trim()).length;
     const totalFields = keys.length;
     if (filledFields === totalFields) return 'complete';
-    if (filledFields > 0) return 'partial';
-    return 'empty';
+    return filledFields > 0 ? 'partial' : 'empty';
   }
 
   if (imageIds.length === 0) {
