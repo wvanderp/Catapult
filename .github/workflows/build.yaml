@@ -15,17 +15,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: "11.7.0"
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: "latest"
-          cache: "npm"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
 
-      - name: npm install
-        run: npm install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: npm run build
-        run: npm run build
+      - name: Build
+        run: pnpm run build
         env:
           VITE_WIKIMEDIA_CLIENT_ID: ${{ secrets.VITE_WIKIMEDIA_CLIENT_ID }}
 
