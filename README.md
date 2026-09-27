@@ -52,8 +52,8 @@ For detailed instructions, see [docs/Acquiring-a-WIKIMEDIA-CLIENT-ID.md](docs/Ac
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url>
-   cd commons-uploader
+   git clone https://github.com/wvanderp/Catapult
+   cd catapult
    ```
 
 2. Install dependencies:
@@ -105,7 +105,7 @@ Catapult features a powerful template system with variable interpolation, EXIF d
 
 ## Project Structure
 
-```
+```tree
 src/
 ├── components/        # React components
 │   ├── tabs/         # Tab components (Upload, Variables, FillOut, Review)
@@ -135,7 +135,7 @@ Contributions are welcome! Please ensure:
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENCE) file for details.
 
 ## Acknowledgments
 
