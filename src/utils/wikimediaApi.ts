@@ -5,7 +5,47 @@
  * utility modules, and tests alike.
  */
 
+import { normalizeMediaWikiFilename } from './mediawikiUtils';
+
 const API_URL = 'https://commons.wikimedia.org/w/api.php';
+
+/**
+ * Checks upload names in batches of at most 50, preserving API normalization.
+ * Existing pages (including redirects) and invalid titles are unavailable.
+ *
+ * @param filenames - Generated filenames before upload normalization.
+ * @returns Availability by original filename; absent entries are unknown.
+ */
+export async function checkFileNamesAvailable(filenames: string[]): Promise<Record<string, boolean>> {
+  const titles = [...new Set(filenames.map((name) => `File:${normalizeMediaWikiFilename(name)}`))];
+  const availability = new Map<string, boolean>();
+  for (let offset = 0; offset < titles.length; offset += 50) {
+    const batch = titles.slice(offset, offset + 50);
+    const parameters = new URLSearchParams({
+      action: 'query', titles: batch.join('|'), format: 'json', origin: '*',
+    });
+    const response = await fetch(`${API_URL}?${parameters}`);
+    if (!response.ok) throw new Error(`Filename check failed: HTTP ${response.status}`);
+    const data = await response.json() as {
+      error?: unknown;
+      query?: {
+        normalized?: { from: string; to: string }[];
+        pages?: Record<string, { title: string; missing?: string; invalid?: string }>;
+      };
+    };
+    if (data.error || !data.query?.pages) throw new Error('Filename check failed');
+    const normalized = new Map(data.query.normalized?.map(({ from, to }) => [from, to]));
+    const pages = new Map(Object.values(data.query.pages).map((page) => [page.title, page]));
+    for (const title of batch) {
+      const page = pages.get(normalized.get(title) ?? title);
+      if (page) availability.set(title, 'missing' in page && !('invalid' in page));
+    }
+  }
+  return Object.fromEntries(filenames.flatMap((name) => {
+    const available = availability.get(`File:${normalizeMediaWikiFilename(name)}`);
+    return available === undefined ? [] : [[name, available]];
+  }));
+}
 
 /**
  * Checks whether a list of category names exist on Wikimedia Commons.

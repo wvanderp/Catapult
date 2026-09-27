@@ -54,6 +54,10 @@ export interface RenderedText {
   The fully-rendered wikitext for the image.
    */
   wikitext: string;
+  /**
+  The generated upload filename, when available.
+   */
+  title?: string;
 }
 
 /**

@@ -31,6 +31,8 @@ import type { LintRule, AsyncLintRule } from './types';
 import { checkNoDescription } from './rules/checkNoDescription';
 import { checkNoCategories } from './rules/checkNoCategories';
 import { checkCategoriesRule } from './rules/checkCategoriesRule';
+import { checkAvailableFilenames } from './rules/checkFilenames';
+export { checkUniqueFilenames, checkAvailableFilenames } from './rules/checkFilenames';
 
 /**
  * All synchronous lint rules that apply to every image.
@@ -46,4 +48,4 @@ export const SYNC_LINT_RULES: LintRule[] = [checkNoDescription, checkNoCategorie
  * Rules are debounced and run together by `useLintResults`. Each rule receives
  * all images' rendered texts and may make external API calls.
  */
-export const ASYNC_LINT_RULES: AsyncLintRule[] = [checkCategoriesRule];
+export const ASYNC_LINT_RULES: AsyncLintRule[] = [checkCategoriesRule, checkAvailableFilenames];

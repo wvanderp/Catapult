@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useImageSetStore } from '../store/imageSetStore';
 import { applyTemplate } from '../utils/templateUtils';
 import { createUtilityContext } from '../utils/utilityContext';
 import {
   SYNC_LINT_RULES,
   ASYNC_LINT_RULES,
+  checkUniqueFilenames,
   type LintIssue,
   type RenderedText,
 } from '../utils/lint';
@@ -20,7 +21,7 @@ export interface LintResults {
   /**
   True while async lint rules are in flight.
    */
-  isCheckingCategories: boolean;
+  isChecking: boolean;
 }
 
 /**
@@ -36,13 +37,14 @@ export interface LintResults {
  *   2. Invoking the rule registries.
  *   3. Managing loading state and combining results.
  *
- * @returns `{ issues, isCheckingCategories }` — the current lint findings and
+ * @returns `{ issues, isChecking }` — the current lint findings and
  *          a flag indicating whether async rules are still in flight.
  */
 export function useLintResults(): LintResults {
   const images = useImageSetStore((state) => state.imageSet.images);
   const imageOrder = useImageSetStore((state) => state.imageSet.imageOrder);
   const template = useImageSetStore((state) => state.imageSet.template);
+  const titleTemplate = useImageSetStore((state) => state.imageSet.titleTemplate);
   const globalVariables = useImageSetStore((state) => state.imageSet.globalVariables);
 
   // Resolved order with backwards-compat fallback
@@ -65,69 +67,57 @@ export function useLintResults(): LintResults {
       return {
         id,
         wikitext: applyTemplate(template, context),
+        title: applyTemplate(titleTemplate, context),
       };
     });
-  }, [imageIds, images, template, globalVariables]);
+  }, [imageIds, images, template, titleTemplate, globalVariables]);
 
   // ── Step 2: run sync rules ──────────────────────────────────────────────────
 
   const syncIssues = useMemo<LintIssue[]>(() => {
-    return renderedTexts.flatMap(({ id, wikitext }) =>
+    return [...checkUniqueFilenames(renderedTexts), ...renderedTexts.flatMap(({ id, wikitext }) =>
       SYNC_LINT_RULES.flatMap((rule) => {
         const issue = rule(wikitext, id);
         return issue === null ? [] : [issue];
       }),
-    );
+    )];
   }, [renderedTexts]);
 
   // ── Step 3: run async rules (debounced) ─────────────────────────────────────
 
-  const [asyncIssues, setAsyncIssues] = useState<LintIssue[]>([]);
-  const [isRunningAsync, setIsRunningAsync] = useState(false);
-  const debounceTimerReference = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [asyncResult, setAsyncResult] = useState<{
+    input: RenderedText[];
+    issues: LintIssue[];
+  } | null>(null);
 
   useEffect(() => {
-    if (debounceTimerReference.current !== null) {
-      clearTimeout(debounceTimerReference.current);
-    }
+    let cancelled = false;
 
     // All setState calls are deferred into the timer callback so the effect
     // body itself stays side-effect-free (avoids cascading render violations).
-    debounceTimerReference.current = setTimeout(() => {
-      if (renderedTexts.length === 0) {
-        setAsyncIssues([]);
-        setIsRunningAsync(false);
-        return;
-      }
-
-      setIsRunningAsync(true);
-
+    const timer = setTimeout(() => {
       void Promise.all(ASYNC_LINT_RULES.map((rule) => rule(renderedTexts)))
         .then((results) => {
-          setAsyncIssues(results.flat());
+          if (!cancelled) setAsyncResult({ input: renderedTexts, issues: results.flat() });
         })
         .catch(() => {
-          setAsyncIssues([]);
-        })
-        .finally(() => {
-          setIsRunningAsync(false);
+          if (!cancelled) setAsyncResult({ input: renderedTexts, issues: [] });
         });
     }, 300);
 
     return () => {
-      if (debounceTimerReference.current !== null) {
-        clearTimeout(debounceTimerReference.current);
-      }
+      cancelled = true;
+      clearTimeout(timer);
     };
   }, [renderedTexts]);
 
   // ── Combine all issues ──────────────────────────────────────────────────────
 
   const issues = useMemo<LintIssue[]>(
-    () => [...syncIssues, ...asyncIssues],
-    [syncIssues, asyncIssues],
+    () => [...syncIssues, ...(asyncResult?.input === renderedTexts ? asyncResult.issues : [])],
+    [syncIssues, asyncResult, renderedTexts],
   );
 
-  return { issues, isCheckingCategories: isRunningAsync };
+  return { issues, isChecking: renderedTexts.length > 0 && asyncResult?.input !== renderedTexts };
 }
 

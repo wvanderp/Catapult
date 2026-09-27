@@ -71,6 +71,7 @@ interface ImageCheckRowProperties {
   imageId: string;
   imageName: string;
   issues: LintIssue[];
+  isChecking: boolean;
 }
 
 /**
@@ -81,18 +82,20 @@ interface ImageCheckRowProperties {
  * @param props.imageId   - The image ID (for thumbnail loading).
  * @param props.imageName - The original filename.
  * @param props.issues    - Lint issues belonging to this image.
+ * @param props.isChecking - Whether Commons checks are still pending.
  * @returns A card showing the image and its issues (or all-clear state).
  */
 function ImageCheckRow({
   imageId,
   imageName,
   issues,
+  isChecking,
 }: ImageCheckRowProperties) {
   const { imageUrl, isLoading } = useImageUrl(imageId);
 
   const hasErrors = issues.some((issue) => issue.severity === 'error');
   const hasWarnings = issues.some((issue) => issue.severity === 'warning');
-  const isAllClear = issues.length === 0;
+  const isAllClear = issues.length === 0 && !isChecking;
 
   /**
    * Derive the left border colour based on the worst severity.
@@ -101,6 +104,7 @@ function ImageCheckRow({
    */
   function getBorderColor(): string {
     if (hasErrors) return 'border-red-500/50';
+    if (isChecking) return 'border-zinc-700/50';
     return hasWarnings ? 'border-amber-500/50' : 'border-emerald-500/40';
   }
 
@@ -142,6 +146,7 @@ function ImageCheckRow({
             </div>
           ) : (
             <div className="space-y-2">
+              {isChecking && <p className="text-sm text-zinc-400">Checking Commons…</p>}
               {issues.map((issue, index) => (
                 <IssueCard key={index} issue={issue} />
               ))}
@@ -158,7 +163,7 @@ function ImageCheckRow({
 interface SummaryStripProperties {
   errorCount: number;
   warningCount: number;
-  isCheckingCategories: boolean;
+  isChecking: boolean;
 }
 
 /**
@@ -169,20 +174,20 @@ interface SummaryStripProperties {
  * @param props - The props object
  * @param props.errorCount           - Total number of errors.
  * @param props.warningCount         - Total number of warnings.
- * @param props.isCheckingCategories - Whether the category API call is in flight.
+ * @param props.isChecking - Whether Commons checks are in flight.
  * @returns A summary banner element.
  */
 function SummaryStrip({
   errorCount,
   warningCount,
-  isCheckingCategories,
+  isChecking,
 }: SummaryStripProperties) {
-  if (isCheckingCategories) {
+  if (isChecking) {
     return (
       <div className="flex items-center gap-3 rounded-2xl border border-zinc-800/60 bg-zinc-900/60 px-6 py-4 backdrop-blur-md">
         <div className="size-4 animate-spin rounded-full border-2 border-zinc-700 border-t-teal-500" />
         <span className="text-sm font-medium text-zinc-400">
-          Checking categories on Wikimedia Commons…
+          Checking categories and filenames on Wikimedia Commons…
         </span>
       </div>
     );
@@ -276,7 +281,7 @@ export function CheckTab() {
   const images = useImageSetStore((state) => state.imageSet.images);
   const imageOrder = useImageSetStore((state) => state.imageSet.imageOrder);
 
-  const { issues, isCheckingCategories } = useLintResults();
+  const { issues, isChecking } = useLintResults();
 
   const imageKeys = Object.keys(images);
   const imageIds =
@@ -333,7 +338,7 @@ export function CheckTab() {
       <SummaryStrip
         errorCount={errorCount}
         warningCount={warningCount}
-        isCheckingCategories={isCheckingCategories}
+        isChecking={isChecking}
       />
 
       {/* Per-image section */}
@@ -359,6 +364,7 @@ export function CheckTab() {
               imageId={id}
               imageName={image.name}
               issues={imageIssues}
+              isChecking={isChecking}
             />
           );
         })}
