@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { useImageUrl } from '../hooks/useImageData';
+import { useInViewport } from '../hooks/useInViewport';
 
 export interface CarouselImage {
     id: string;
@@ -57,25 +58,29 @@ interface ThumbnailProps {
  * @returns The rendered thumbnail button component
  */
 function Thumbnail({ image, isSelected, status, index, onSelect }: ThumbnailProps) {
-    const { imageUrl, isLoading } = useImageUrl(image.id);
+    const [previewReference, isInViewport] = useInViewport<HTMLButtonElement>({ rootMargin: '120px' });
+    const { imageUrl, isLoading, error } = useImageUrl(image.id, 'thumbnail', isInViewport);
+    let preview: React.ReactNode;
+    if (!isInViewport && !imageUrl) {
+        preview = <div className="flex size-full items-center justify-center bg-zinc-900 p-1 text-center text-[9px] text-zinc-500">Preview loads when visible</div>;
+    } else if (error) {
+        preview = <div className="flex size-full items-center justify-center bg-zinc-900 p-1 text-center text-[9px] text-zinc-500" title={error}>Preview unavailable</div>;
+    } else if (isLoading) {
+        preview = <div className="flex size-full items-center justify-center bg-zinc-900"><div className="size-4 animate-spin rounded-full border-2 border-zinc-700 border-t-teal-400" /></div>;
+    } else if (imageUrl) {
+        preview = <img src={imageUrl} alt={image.name} className="size-full object-cover" />;
+    } else {
+        preview = <div className="flex size-full items-center justify-center bg-zinc-900 p-1 text-center text-[9px] text-zinc-500">Preview unavailable</div>;
+    }
 
     return (
         <button
+            ref={previewReference}
             onClick={onSelect}
             className={`group relative size-16 shrink-0 overflow-hidden rounded-xl transition-all duration-200 hover:scale-105 ${getStatusStyles(status, isSelected)}`}
             title={image.name}
         >
-            {isLoading ? (
-                <div className="flex size-full items-center justify-center bg-zinc-900">
-                    <div className="size-4 animate-spin rounded-full border-2 border-zinc-700 border-t-teal-400" />
-                </div>
-            ) : (
-                <img
-                    src={imageUrl}
-                    alt={image.name}
-                    className="size-full object-cover"
-                />
-            )}
+            {preview}
             <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
             <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-1">
                 <span className="text-xs font-bold text-white">{index + 1}</span>

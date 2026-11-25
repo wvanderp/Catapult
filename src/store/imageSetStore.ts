@@ -6,7 +6,9 @@ import {
   storeImageFromBase64,
   removeImageBlob,
   removeImageBlobs,
+  getImageBlob,
 } from "../utils/imageBlobStorage";
+import { forgetPackageWhenUnused, hashImageBlob, isLargeOriginal, type ImportedPhoto } from "../utils/companion";
 
 /**
  * Image metadata stored in the application state.
@@ -31,6 +33,7 @@ export interface Image {
    * Extracted EXIF data from the image, keyed by EXIF field name
    */
   exifData?: Record<string, unknown>;
+  exifStatus?: "complete" | "failed";
   /**
    * Whether the image has been successfully uploaded to Wikimedia Commons
    */
@@ -47,6 +50,18 @@ export interface Image {
    * Error message if upload failed
    */
   uploadError?: string;
+  /**
+  Browser package source; package bytes remain in the selected ZIP, never IndexedDB.
+   */
+  companion?: ImportedPhoto;
+  /**
+  True when the original exceeds the documented 100 MiB upload warning threshold.
+   */
+  largeOriginal?: boolean;
+  /**
+  SHA-256 hash cached after the original bytes are read.
+   */
+  sha256?: string;
 }
 
 /**
@@ -61,6 +76,19 @@ export interface ImageInput {
   mimeType: string;
   keys: Record<string, string>;
   exifData?: Record<string, unknown>;
+}
+
+/**
+ * Return the decoded byte length represented by a base64 string.
+ 
+ * @param base64 Encoded bytes.
+ * @returns The number of decoded bytes.
+ */
+export function getBase64ByteLength(base64: string): number {
+  let padding = 0;
+  if (base64.endsWith("==")) padding = 2;
+  else if (base64.endsWith("=")) padding = 1;
+  return Math.floor(base64.length * 3 / 4) - padding;
 }
 
 interface ImageSet {
@@ -93,11 +121,18 @@ interface StateStore {
   setTemplate: (template: string) => void;
   setGlobalVariable: (key: string, value: string) => void;
   addImage: (image: ImageInput) => Promise<string>;
+  addCompanionImage: (photo: ImportedPhoto) => Promise<string>;
+  addCompanionImages: (photos: ImportedPhoto[]) => Promise<string[]>;
   removeImage: (imageId: string) => Promise<void>;
   reorderImages: (fromIndex: number, toIndex: number) => void;
   setImageOrder: (order: string[]) => void;
   updateImageKeys: (imageId: string, keys: Record<string, string>) => void;
   setImageReviewed: (imageId: string, reviewed: boolean) => void;
+  setImageExifData: (imageId: string, exifData: Record<string, unknown>) => void;
+  setImagesExifData: (updates: Record<string, { exifData?: Record<string, unknown>; exifStatus: "complete" | "failed" }>) => void;
+  setImageExifStatus: (imageId: string, status: "complete" | "failed") => void;
+  setImageSha256: (imageId: string, sha256: string) => void;
+  setImageLargeOriginal: (imageId: string, largeOriginal: boolean) => void;
   setImageUploaded: (
     imageId: string,
     uploaded: boolean,
@@ -113,7 +148,7 @@ interface StateStore {
 
 export const useImageSetStore = create<StateStore>()(
   persist(
-    (set) => ({
+    (set): StateStore => ({
       imageSet: {
         template: INITIAL_TEMPLATE,
         titleTemplate: INITIAL_TITLE_TEMPLATE,
@@ -149,6 +184,8 @@ export const useImageSetStore = create<StateStore>()(
         const id = crypto.randomUUID();
         // Store the blob data separately in IndexedDB
         await storeImageFromBase64(id, image.file, image.mimeType);
+        const stored = await getImageBlob(id);
+        const sha256 = stored ? await hashImageBlob(stored.blob) : undefined;
 
         // Store only metadata in the state
         set((state) => ({
@@ -162,7 +199,10 @@ export const useImageSetStore = create<StateStore>()(
                 mimeType: image.mimeType,
                 keys: image.keys,
                 exifData: image.exifData,
+                exifStatus: image.exifData ? "complete" : undefined,
                 reviewed: false,
+                largeOriginal: isLargeOriginal(getBase64ByteLength(image.file)),
+                sha256,
               },
             },
             imageOrder: [...state.imageSet.imageOrder, id],
@@ -170,13 +210,41 @@ export const useImageSetStore = create<StateStore>()(
         }));
         return id;
       },
+      addCompanionImage: async (photo: ImportedPhoto): Promise<string> => {
+        const id = crypto.randomUUID();
+        set((state) => ({ imageSet: { ...state.imageSet, images: { ...state.imageSet.images, [id]: {
+          id, name: photo.name, mimeType: photo.mimeType, keys: {}, reviewed: false,
+          companion: photo, largeOriginal: isLargeOriginal(photo.size), sha256: photo.sha256,
+        } }, imageOrder: [...state.imageSet.imageOrder, id] } }));
+        return id;
+      },
+      addCompanionImages: async (photos: ImportedPhoto[]) => {
+        performance.mark("catapult:store-images:start");
+        const ids = photos.map(() => crypto.randomUUID());
+        set((state) => ({
+          imageSet: {
+            ...state.imageSet,
+            images: {
+              ...state.imageSet.images,
+              ...Object.fromEntries(photos.map((photo, index) => [ids[index], {
+                id: ids[index]!, name: photo.name, mimeType: photo.mimeType, keys: {}, reviewed: false,
+                companion: photo, largeOriginal: isLargeOriginal(photo.size), sha256: photo.sha256,
+              } satisfies Image])),
+            },
+            imageOrder: [...state.imageSet.imageOrder, ...ids],
+          },
+        }));
+        performance.mark("catapult:store-images:end");
+        return ids;
+      },
       removeImage: async (imageId: string) => {
-        // Remove blob from IndexedDB
-        await removeImageBlob(imageId);
-
+        let removed: Image | undefined;
+        let remainingPackages: string[] = [];
         set((state) => {
+          removed = state.imageSet.images[imageId];
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [imageId]: _removed, ...rest } = state.imageSet.images;
+          remainingPackages = Object.values(rest).flatMap((image) => image.companion ? [image.companion.packageId] : []);
           return {
             imageSet: {
               ...state.imageSet,
@@ -187,6 +255,8 @@ export const useImageSetStore = create<StateStore>()(
             },
           };
         });
+        if (!removed?.companion) await removeImageBlob(imageId);
+        if (removed?.companion) await forgetPackageWhenUnused(removed.companion.packageId, remainingPackages);
       },
       reorderImages: (fromIndex: number, toIndex: number) =>
         set((state) => {
@@ -233,6 +303,24 @@ export const useImageSetStore = create<StateStore>()(
             },
           },
         })),
+      setImageExifData: (imageId: string, exifData: Record<string, unknown>) =>
+        set((state) => ({
+          imageSet: {
+            ...state.imageSet,
+            images: { ...state.imageSet.images, [imageId]: { ...state.imageSet.images[imageId], exifData } },
+          },
+        })),
+      setImageExifStatus: (imageId, exifStatus) => set((state) => ({ imageSet: { ...state.imageSet, images: { ...state.imageSet.images, [imageId]: { ...state.imageSet.images[imageId], exifStatus } } } })),
+      setImagesExifData: (updates) => set((state) => {
+        const images = { ...state.imageSet.images };
+        for (const [imageId, update] of Object.entries(updates)) {
+          const image = images[imageId];
+          if (image) images[imageId] = { ...image, ...(update.exifData && { exifData: update.exifData }), exifStatus: update.exifStatus };
+        }
+        return { imageSet: { ...state.imageSet, images } };
+      }),
+      setImageSha256: (imageId, sha256) => set((state) => ({ imageSet: { ...state.imageSet, images: { ...state.imageSet.images, [imageId]: { ...state.imageSet.images[imageId], sha256 } } } })),
+      setImageLargeOriginal: (imageId, largeOriginal) => set((state) => ({ imageSet: { ...state.imageSet, images: { ...state.imageSet.images, [imageId]: { ...state.imageSet.images[imageId], largeOriginal } } } })),
       setImageUploaded: (
         imageId: string,
         uploaded: boolean,
@@ -272,12 +360,13 @@ export const useImageSetStore = create<StateStore>()(
         })),
       clearAllImages: async () => {
         // Get all image IDs before clearing state
-        const imageIds = Object.keys(
-          useImageSetStore.getState().imageSet.images,
-        );
+        const currentImages = useImageSetStore.getState().imageSet.images;
+        const imageIds = Object.values(currentImages).filter((image) => !image.companion).map((image) => image.id);
+        const packageIds = [...new Set(Object.values(currentImages).flatMap((image) => image.companion ? [image.companion.packageId] : []))];
 
         // Clear blobs from IndexedDB
         await removeImageBlobs(imageIds);
+        await Promise.all(packageIds.map((id) => forgetPackageWhenUnused(id, [])));
 
         // Clear state
         set((state) => ({
@@ -295,3 +384,14 @@ export const useImageSetStore = create<StateStore>()(
     },
   ),
 );
+
+/**
+Backfill exact original byte sizes for loose images already in IndexedDB.
+ */
+export async function backfillLargeOriginalFlags(): Promise<void> {
+  const images = Object.values(useImageSetStore.getState().imageSet.images);
+  await Promise.all(images.filter((image) => !image.companion).map(async (image) => {
+    const stored = await getImageBlob(image.id);
+    if (stored && image.largeOriginal !== isLargeOriginal(stored.blob.size)) useImageSetStore.getState().setImageLargeOriginal(image.id, isLargeOriginal(stored.blob.size));
+  }));
+}

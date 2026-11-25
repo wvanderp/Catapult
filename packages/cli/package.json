@@ -1,0 +1,22 @@
+{
+  "name": "@catapult/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "package-photos": "./src/main.tsx"
+  },
+  "dependencies": {
+    "@catapult/package-format": "workspace:*",
+    "@zip.js/zip.js": "^2.25.0",
+    "ink": "^8.0.0",
+    "react": "^19.3.0",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "ink-testing-library": "^4.0.0",
+    "tsx": "^4.23.15",
+    "string-width": "^8.3.0"
+  }
+}

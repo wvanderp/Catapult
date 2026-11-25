@@ -1,9 +1,11 @@
-import { useEffect, useReducer, useMemo } from "react";
+import { useEffect, useReducer, useMemo, useSyncExternalStore } from "react";
 import {
   getImageObjectUrl,
   getImageAsFile,
   getImageBase64,
 } from "../utils/imageBlobStorage";
+import { useImageSetStore } from "../store/imageSetStore";
+import { subscribe as subscribePackages, getSnapshot as getPackageSnapshot } from "../utils/companion";
 
 interface UseImageDataResult {
   /**
@@ -93,9 +95,14 @@ function imageDataReducer(
  * Creates an object URL for efficient rendering and cleans it up on unmount
  *
  * @param imageId The unique identifier for the image
+ * @param size Preview size to load.
+ * @param enabled Whether loading is enabled.
  * @returns Object containing image URL, loading state, and error state
  */
-export function useImageUrl(imageId: string | undefined): UseImageDataResult {
+export function useImageUrl(imageId: string | undefined, size: "thumbnail" | "working" = "thumbnail", enabled = true): UseImageDataResult {
+  const companion = useImageSetStore((store) => imageId ? store.imageSet.images[imageId]?.companion : undefined);
+  const packageSnapshot = useSyncExternalStore(subscribePackages, getPackageSnapshot, getPackageSnapshot);
+  const packageAvailability = companion ? packageSnapshot.states[companion.packageId] : "available";
   const initialState = useMemo(
     (): ImageDataState => ({
       imageUrl: undefined,
@@ -110,20 +117,30 @@ export function useImageUrl(imageId: string | undefined): UseImageDataResult {
   const [state, dispatch] = useReducer(imageDataReducer, initialState);
 
   useEffect(() => {
-    if (!imageId) {
+    if (!imageId || !enabled) {
       dispatch({ type: "RESET" });
       return;
     }
 
     let objectUrl: string | undefined;
+    let active = true;
+    const controller = new AbortController();
     dispatch({ type: "LOAD_START", imageId });
 
-    getImageObjectUrl(imageId)
+    if (companion && packageAvailability !== "available") {
+      dispatch({ type: "LOAD_ERROR", error: "Package is unavailable. Select the package again.", imageId });
+      return () => { active = false; controller.abort(); };
+    }
+
+    getImageObjectUrl(imageId, companion, size, controller.signal)
       .then((url) => {
+        if (!active) { if (url) URL.revokeObjectURL(url); return; }
         objectUrl = url;
-        dispatch({ type: "LOAD_SUCCESS", imageUrl: url ?? "", imageId });
+        if (url) dispatch({ type: "LOAD_SUCCESS", imageUrl: url, imageId });
+        else dispatch({ type: "LOAD_ERROR", error: "Image data is unavailable", imageId });
       })
       .catch((error_: unknown) => {
+        if (!active || controller.signal.aborted) return;
         dispatch({
           type: "LOAD_ERROR",
           error:
@@ -133,11 +150,13 @@ export function useImageUrl(imageId: string | undefined): UseImageDataResult {
       });
 
     return () => {
+      active = false;
+      controller.abort();
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [imageId]);
+  }, [imageId, companion, size, enabled, packageAvailability]);
 
   return {
     imageUrl: state.imageUrl,
@@ -168,13 +187,25 @@ export function useImageFile(
   imageId: string | undefined,
   filename: string,
 ): UseImageFileResult {
+  const companion = useImageSetStore((store) => imageId ? store.imageSet.images[imageId]?.companion : undefined);
   return {
     getFile: async () => {
       if (!imageId) return;
-      return getImageAsFile(imageId, filename);
+      return getImageAsFile(imageId, filename, companion);
     },
     getBase64: async () => {
       if (!imageId) return;
+      if (companion) {
+        const file = await getImageAsFile(imageId, filename, companion);
+        if (!file) return;
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.addEventListener('load', () => resolve(String(reader.result)));
+          reader.addEventListener('error', () => reject(reader.error));
+          reader.readAsDataURL(file);
+        });
+        return dataUrl.split(",", 2)[1];
+      }
       return getImageBase64(imageId);
     },
   };
@@ -195,17 +226,19 @@ const imageUrlCache: ImageUrlCache = {};
  * This is useful for components that need the URL synchronously
  *
  * @param imageId - The unique identifier for the image
+ * @param companion Optional package source.
  * @returns Promise resolving to the object URL, or undefined if not found
  */
 export async function getCachedImageUrl(
   imageId: string,
+  companion?: import("../utils/companion").ImportedPhoto,
 ): Promise<string | undefined> {
   if (imageUrlCache[imageId]) {
     imageUrlCache[imageId].refCount++;
     return imageUrlCache[imageId].url;
   }
 
-  const url = await getImageObjectUrl(imageId);
+  const url = await getImageObjectUrl(imageId, companion);
   if (url) {
     imageUrlCache[imageId] = { url, refCount: 1 };
   }

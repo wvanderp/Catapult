@@ -84,4 +84,15 @@ export default defineConfig([
       ]
     },
   },
+  {
+    files: ["packages/**/*.{ts,tsx}"],
+    languageOptions: { globals: globals.node },
+    rules: {
+      "unicorn/max-nested-calls": "off",
+      "unicorn/single-line-block-comment-style": "off",
+      "unicorn/prefer-combined-guards": "off",
+      "unicorn/prefer-string-raw": "off",
+      "react-refresh/only-export-components": "off",
+    },
+  },
 ]);

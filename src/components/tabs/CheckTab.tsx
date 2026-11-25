@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useImageSetStore } from '../../store/imageSetStore';
 import { useImageUrl } from '../../hooks/useImageData';
+import { useInViewport } from '../../hooks/useInViewport';
 import { useLintResults } from '../../hooks/useLintResults';
 import type { LintIssue, LintSeverity } from '../../utils/lintUtils';
 
@@ -91,7 +92,8 @@ function ImageCheckRow({
   issues,
   isChecking,
 }: ImageCheckRowProperties) {
-  const { imageUrl, isLoading } = useImageUrl(imageId);
+  const [previewReference, isInViewport] = useInViewport<HTMLDivElement>({ rootMargin: '200px' });
+  const { imageUrl, isLoading, error } = useImageUrl(imageId, 'thumbnail', isInViewport);
 
   const hasErrors = issues.some((issue) => issue.severity === 'error');
   const hasWarnings = issues.some((issue) => issue.severity === 'warning');
@@ -114,13 +116,13 @@ function ImageCheckRow({
     >
       <div className="flex items-start gap-5 p-5">
         {/* Thumbnail */}
-        <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
+        <div ref={previewReference} className="size-20 shrink-0 overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
           {isLoading ? (
             <div className="flex size-full items-center justify-center">
               <div className="size-4 animate-spin rounded-full border-2 border-zinc-700 border-t-teal-500" />
             </div>
           ) : (
-            <img src={imageUrl} alt={imageName} className="size-full object-cover" />
+            imageUrl ? <img src={imageUrl} alt={imageName} className="size-full object-cover" /> : <div className="flex size-full items-center justify-center p-1 text-center text-[9px] text-zinc-500" title={error}>{isInViewport ? error ?? 'Preview unavailable' : 'Preview loads when visible'}</div>
           )}
         </div>
 

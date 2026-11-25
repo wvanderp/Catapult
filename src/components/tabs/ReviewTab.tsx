@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useImageSetStore, type Image } from '../../store/imageSetStore';
 import { applyTemplate } from '../../utils/templateUtils';
 import { createUtilityContext } from '../../utils/utilityContext';
 import { getImageAsFile } from '../../utils/imageBlobStorage';
 import { useImageUrl } from '../../hooks/useImageData';
+import { useInViewport } from '../../hooks/useInViewport';
 import { useLintResults } from '../../hooks/useLintResults';
 
 import { useWikimediaCommons, type UploadWarning } from '../../hooks/useWikimediaCommons';
+import { LargeOriginalNotice } from '../LargeOriginalNotice';
 
 type UploadStatus = 'pending' | 'uploading' | 'success' | 'error' | 'warning';
 
@@ -137,7 +139,9 @@ function UploadStatusIndicator({ status, isReviewed, onToggleReviewed }: UploadS
  * @returns The review item component
  */
 function ReviewItem({ image, title, description, uploadStatus, onToggleReviewed }: ReviewItemProperties) {
-  const { imageUrl, isLoading } = useImageUrl(image.id);
+  const [previewReference, isInViewport] = useInViewport<HTMLDivElement>({ rootMargin: '200px' });
+  const { imageUrl, isLoading, error: previewError } = useImageUrl(image.id, 'thumbnail', isInViewport);
+  const reviewCardReference = useRef<HTMLDivElement>(null);
 
   const hasUnfilledVariables = title.includes(MISSING_PLACEHOLDER) || description.includes(MISSING_PLACEHOLDER);
 
@@ -169,7 +173,7 @@ function ReviewItem({ image, title, description, uploadStatus, onToggleReviewed 
   }
 
   return (
-    <div className={`overflow-hidden rounded-2xl border ${getBorderColor()} ${getBackgroundColor()} backdrop-blur-md transition-all duration-200`}>
+    <div ref={reviewCardReference} className={`overflow-hidden rounded-2xl border ${getBorderColor()} ${getBackgroundColor()} backdrop-blur-md transition-all duration-200`}>
       {/* Success banner for uploaded images */}
       {isUploaded && image.uploadUrl && (
         <div className="flex items-center justify-between bg-emerald-600 px-5 py-3.5">
@@ -195,17 +199,17 @@ function ReviewItem({ image, title, description, uploadStatus, onToggleReviewed 
 
       <div className="flex items-start gap-5 p-5">
         {/* Thumbnail */}
-        <div className="size-24 shrink-0 overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
+        <div ref={previewReference} className="size-24 shrink-0 overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
           {isLoading ? (
             <div className="flex size-full items-center justify-center">
               <div className="size-5 animate-spin rounded-full border-2 border-zinc-700 border-t-teal-500" />
             </div>
           ) : (
-            <img
+            imageUrl ? <img
               src={imageUrl}
               alt={image.name}
               className="size-full object-cover"
-            />
+            /> : <div className="flex size-full items-center justify-center p-2 text-center text-[10px] text-zinc-500" title={previewError}>{isInViewport ? previewError ?? 'Preview unavailable' : 'Preview loads when visible'}</div>
           )}
         </div>
 
@@ -216,6 +220,7 @@ function ReviewItem({ image, title, description, uploadStatus, onToggleReviewed 
               <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600">File</span>
                 <span className="truncate text-sm text-zinc-400">{image.name}</span>
+                {image.largeOriginal && <span className="shrink-0 rounded bg-amber-500/15 px-2 py-1 text-[10px] font-semibold text-amber-300">Over 100 MiB</span>}
               </div>
 
               <div>
@@ -355,7 +360,7 @@ export function ReviewTab() {
 
       try {
         // Get the File from IndexedDB
-        const file = await getImageAsFile(image.id, image.name);
+        const file = await getImageAsFile(image.id, image.name, image.companion);
         if (!file) {
           setImageUploadStatus(id, 'error', 'Image data not found');
           continue;
@@ -480,6 +485,7 @@ export function ReviewTab() {
       </div>
 
       {/* Lint issues banner — informational only, does not block upload */}
+      <LargeOriginalNotice names={processedImages.flatMap(({ image }) => image.largeOriginal ? [image.name] : [])} />
       {hasLintIssues && (
         <div className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-4 backdrop-blur-md">
           <div className="flex items-center gap-3">

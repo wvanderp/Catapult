@@ -6,6 +6,9 @@ import { Root } from './routes/Root'
 import { AuthCallback } from './routes/AuthCallback'
 import { UploadTab, VariablesTab, FillOutTab, CheckTab, ReviewTab } from './components/tabs'
 import { TabLayout } from './components/TabLayout'
+import { initializeStartup } from './utils/startup'
+
+void initializeStartup()
 
 const rootRoute = createRootRoute({
   component: Root,

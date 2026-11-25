@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useImageSetStore } from '../store/imageSetStore';
 import { extractTemplateKeys } from '../utils/templateUtils';
 import { useImageUrl } from '../hooks/useImageData';
+import { useInViewport } from '../hooks/useInViewport';
 
 interface ImageItemProperties {
     id: string;
@@ -25,7 +26,8 @@ export function ImageItem({ id }: ImageItemProperties) {
     const keys = useMemo(() => extractTemplateKeys(titleTemplate + ' ' + template), [titleTemplate, template]);
 
     // Get the image URL from the IndexedDB storage
-    const { imageUrl } = useImageUrl(id);
+    const [previewReference, isInViewport] = useInViewport<HTMLDivElement>({ rootMargin: '200px' });
+    const { imageUrl, isLoading, error } = useImageUrl(id, 'thumbnail', isInViewport);
 
     const handleKeyChange = (key: string, value: string) => {
         updateImageKeys(id, {
@@ -38,13 +40,14 @@ export function ImageItem({ id }: ImageItemProperties) {
 
     return (
         <div className="flex flex-col gap-6 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 p-6 md:flex-row">
-            <div className="flex min-h-[200px] w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-900 md:w-1/3">
+            <div ref={previewReference} className="flex min-h-[200px] w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-900 md:w-1/3">
                 {imageUrl && (
                     <img
                         src={imageUrl}
                         alt={image.name}
                         className="max-h-[400px] w-full object-contain" />
                 )}
+                {!imageUrl && <p className="p-3 text-center text-xs text-zinc-500">{error ?? (isLoading ? 'Loading preview…' : (isInViewport ? 'Preview unavailable' : 'Preview loads when visible'))}</p>}
             </div>
             <div className="flex-1 space-y-4">
                 <div className="truncate font-medium text-white" title={image.name}>

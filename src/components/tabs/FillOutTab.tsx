@@ -53,7 +53,7 @@ export function FillOutTab() {
   const currentImage = images[currentId];
 
   // Hook must be called unconditionally before any early returns
-  const { imageUrl, isLoading: isImageLoading } = useImageUrl(currentImage?.id);
+  const { imageUrl, isLoading: isImageLoading } = useImageUrl(currentImage?.id, 'working');
 
   const carouselImages = useMemo<CarouselImage[]>(() => {
     return imageIds.map(id => ({

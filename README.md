@@ -80,6 +80,28 @@ For detailed instructions, see [docs/Acquiring-a-WIKIMEDIA-CLIENT-ID.md](docs/Ac
 
 ## Usage
 
+### Companion CLI
+
+Install Node.js 20 or later and pnpm 11.7.0. From the Catapult project folder, run `pnpm install`, then:
+
+**Windows (PowerShell):**
+
+```powershell
+pnpm package-photos "C:\Photos\Event 2026"
+```
+
+**Linux:**
+
+```sh
+pnpm package-photos "/home/alex/Photos/Event 2026"
+```
+
+Leave the folder argument off to enter it in the CLI. The interface needs an interactive terminal. Use the arrow keys to move, Enter to continue, Space to select or deselect photos, `/` to filter the photo list, `j` or `t` to choose JPEG or TIFF when both exist, and `Esc` to go back. In RAW resolution, use `a` to accept the highlighted candidate, `x` to accept a missing RAW, `X` to review and accept all remaining missing RAWs together, `m` to enter a RAW path manually, and `p` to request a search in the parent folder and its descendants. The `X` action asks for confirmation and applies only to photos whose RAW state is `missing`; it does not resolve suspicious or ambiguous matches. Confirm the parent search when prompted. `--help` and `--version` print command information.
+
+The resulting ZIP contains the originals, thumbnail and working JPEG previews, JSON metadata, a manifest, and (when enabled) RAW and XMP/PP3/DOP sidecar attachments. It records each original file's full source path in metadata, including drive and folder names; check the ZIP before sharing it if that path is private. The CLI does not modify source files.
+
+In Catapult, open the Companion package import control and select the generated `.zip` file. Catapult reads previews from the package and verifies original files against their recorded hashes before they are used.
+
 ### Workflow
 
 1. **Upload Images** - Drag and drop images or click to select files
