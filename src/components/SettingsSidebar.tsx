@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useSettingsStore, exportSettings, isValidExportedSettings } from '../store/settingsStore';
 import { useImageSetStore } from '../store/imageSetStore';
 import { clearDatabase } from '../utils/indexedDbStorage';
+import { clearCompanionDatabase } from '../utils/companion';
 import { useWikimediaCommons } from '../hooks/useWikimediaCommons';
 
 /**
@@ -73,10 +74,11 @@ function SettingsSidebar() {
 
         try {
             await clearDatabase();
-            clearAllImages();
-            showStatus('success', 'All data cleared. The page will refresh to apply changes.');
+            await clearCompanionDatabase();
+            await clearAllImages();
+            showStatus('success', 'All stored data cleared.');
         } catch (error) {
-            showStatus('error', 'Failed to clear IndexedDB');
+            showStatus('error', error instanceof Error ? error.message : 'Failed to clear stored data');
             console.error('Failed to clear IndexedDB:', error);
         }
     }

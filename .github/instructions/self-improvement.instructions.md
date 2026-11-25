@@ -19,3 +19,5 @@ This is NOT optional. Future sessions depend on accumulated knowledge.
 ---
 
 ## Collected Wisdom
+- The monorepo uses required kebab-case package directory names (for example `packages/package-format`), while the global Unicorn filename-case rule permits only camelCase/PascalCase. Node/browser package ESLint overrides should disable that filename rule for `packages/**/*.ts` rather than renaming the required workspace packages.
+- During file drops, request every `getAsFileSystemHandle()` synchronously before the first `await`; pair the handle with the `getAsFile()` result so the drop still works when `DataTransfer.files` is empty or item order differs.

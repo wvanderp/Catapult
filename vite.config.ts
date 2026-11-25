@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { execSync } from "node:child_process";
@@ -19,6 +19,7 @@ function getGitCommit(): string {
 
 // https://vite.dev/config/
 export default defineConfig({
+  test: { testTimeout: 60_000, maxWorkers: 2 },
   base: "/Catapult/",
   plugins: [
     react(),

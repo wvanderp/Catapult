@@ -1,3 +1,5 @@
+import { packageEntryBlob, getVerifiedOriginalFile, type ImportedPhoto } from "./companion";
+
 const DB_NAME = "ImageBlobDB";
 const STORE_NAME = "ImageBlobs";
 const DB_VERSION = 1;
@@ -125,11 +127,22 @@ export async function getImageDataUrl(id: string): Promise<string | undefined> {
  * Note: Remember to call URL.revokeObjectURL when done with the URL
  * 
  * @param id The unique identifier for the image
+ * @param companion Optional package source.
+ * @param size Requested preview size.
+ * @param signal Optional cancellation signal.
  * @returns An object URL string or undefined if not found
  */
 export async function getImageObjectUrl(
   id: string,
+  companion?: ImportedPhoto,
+  size: "thumbnail" | "working" = "thumbnail",
+  signal?: AbortSignal,
 ): Promise<string | undefined> {
+  if (companion) {
+    if (signal?.aborted) return undefined;
+    const blob = await packageEntryBlob(companion.packageId, companion.photoId, size, signal);
+    return signal?.aborted ? undefined : URL.createObjectURL(blob);
+  }
   const stored = await getImageBlob(id);
   return stored ? URL.createObjectURL(stored.blob) : undefined;
 }
@@ -162,12 +175,17 @@ export async function getImageBase64(id: string): Promise<string | undefined> {
  * 
  * @param id The unique identifier for the image
  * @param filename The filename to use for the File object
+ * @param companion Optional package source.
  * @returns A File object or undefined if not found
  */
 export async function getImageAsFile(
   id: string,
   filename: string,
+  companion?: ImportedPhoto,
 ): Promise<File | undefined> {
+  if (companion) {
+    return getVerifiedOriginalFile(companion.packageId, companion.photoId);
+  }
   const stored = await getImageBlob(id);
   return stored ? new File([stored.blob], filename, { type: stored.mimeType }) : undefined;
 }

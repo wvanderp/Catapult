@@ -3,6 +3,12 @@ import { Link } from '@tanstack/react-router';
 import { useImageSetStore, type Image } from '../../store/imageSetStore';
 import { extractExifData } from '../../utils/exifUtils';
 import { useImageUrl } from '../../hooks/useImageData';
+import { useInViewport } from '../../hooks/useInViewport';
+import { useCompanionImport } from '../../hooks/useCompanionImport';
+import type { BrowserFileHandle } from '../../utils/companion';
+import { ImportPackageButton } from '../companion/ImportPackageButton';
+import { PackageStatusPanel } from '../companion/PackageStatusPanel';
+import { LargeOriginalNotice } from '../LargeOriginalNotice';
 
 /**
  * Prevents the default drag-over behavior to allow dropping files.
@@ -101,10 +107,11 @@ interface ImagePreviewCardProps {
  * @returns The image preview card component
  */
 function ImagePreviewCard({ image, index, total, onMoveUp, onMoveDown, onRemove }: ImagePreviewCardProps) {
-  const { imageUrl, isLoading } = useImageUrl(image.id);
+  const [previewReference, isInViewport] = useInViewport<HTMLDivElement>({ rootMargin: '200px' });
+  const { imageUrl, isLoading, error } = useImageUrl(image.id, 'thumbnail', isInViewport);
 
   return (
-    <div className="group relative aspect-square overflow-hidden rounded-2xl bg-zinc-900/80 ring-1 ring-zinc-800/60 transition-all duration-200 hover:ring-zinc-700/60 hover:shadow-lg hover:shadow-black/20">
+    <div ref={previewReference} className="group relative aspect-square overflow-hidden rounded-2xl bg-zinc-900/80 ring-1 ring-zinc-800/60 transition-all duration-200 hover:ring-zinc-700/60 hover:shadow-lg hover:shadow-black/20">
       {isLoading ? (
         <div className="flex size-full items-center justify-center">
           <div className="size-8 animate-spin rounded-full border-2 border-zinc-700 border-t-teal-400" />
@@ -116,10 +123,8 @@ function ImagePreviewCard({ image, index, total, onMoveUp, onMoveDown, onRemove 
           className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       ) : (
-        <div className="flex size-full items-center justify-center text-zinc-600">
-          <svg className="size-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+        <div className="flex size-full items-center justify-center p-3 text-center text-xs text-zinc-500" title={error}>
+          {isInViewport ? error ?? 'Preview unavailable' : 'Preview loads when visible'}
         </div>
       ))}
       <SortArrows
@@ -139,6 +144,7 @@ function ImagePreviewCard({ image, index, total, onMoveUp, onMoveDown, onRemove 
       <div className="absolute inset-x-0 bottom-0 bg-black/80 p-3">
         <p className="truncate text-xs font-medium text-zinc-200">{image.name}</p>
       </div>
+      {image.largeOriginal && <span className="absolute right-2 top-2 rounded bg-amber-500 px-2 py-1 text-[10px] font-bold text-zinc-950">Over 100 MiB</span>}
       <div className="absolute left-2 top-2 z-10 flex size-6 items-center justify-center rounded-lg bg-black/60 text-xs font-bold text-zinc-200 opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:opacity-100">
         {index + 1}
       </div>
@@ -172,6 +178,8 @@ export function UploadTab() {
   const setImageOrder = useImageSetStore((state) => state.setImageOrder);
   const fileInputReference = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [packageError, setPackageError] = useState('');
+  const companionImport = useCompanionImport();
   const dragDepthReference = useRef(0);
 
   // Sync imageOrder with images for backwards compatibility
@@ -188,6 +196,13 @@ export function UploadTab() {
   const imageIds = imageOrder.length > 0
     ? imageOrder.filter(id => id in images)
     : imageKeys;
+
+  /**
+   *
+   * @param file Selected companion ZIP file.
+   * @param handle Optional file-system handle for later access.
+   */
+  const importPackage = companionImport.importPackage;
 
   /**
    * Handles drag enter event and increments drag depth counter.
@@ -233,6 +248,10 @@ export function UploadTab() {
     }
 
     for (const file of files) {
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        await importPackage(file);
+        continue;
+      }
       // Extract EXIF data first (before FileReader consumes the file)
       const exifData = await extractExifData(file);
 
@@ -274,9 +293,21 @@ export function UploadTab() {
     event.preventDefault();
     dragDepthReference.current = 0;
     setIsDragOver(false);
-    const files = event.dataTransfer.files;
-    if (files) {
-      for (const file of files) {
+    const droppedItems = [...event.dataTransfer.items].map((item) => {
+      const handleItem = item as DataTransferItem & { getAsFileSystemHandle?: () => Promise<FileSystemHandle | null> };
+      const handle = handleItem.getAsFileSystemHandle ? handleItem.getAsFileSystemHandle() : Promise.resolve(undefined);
+      return { file: item.getAsFile(), handle };
+    });
+    const droppedFiles = droppedItems.flatMap((item) => item.file ? [{ ...item, file: item.file }] : []);
+    const nativeFiles = [...event.dataTransfer.files];
+    const files = nativeFiles.length > 0 ? nativeFiles : droppedFiles.map((item) => item.file);
+    for (const [index, file] of files.entries()) {
+      const droppedItem = droppedFiles[index];
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        const handle = await droppedItem?.handle;
+        await importPackage(file, handle?.kind === 'file' ? handle as BrowserFileHandle : undefined);
+        continue;
+      }
         if (!file.type.startsWith('image/')) {
         	continue;
         }
@@ -300,9 +331,8 @@ export function UploadTab() {
             });
           }
         });
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
       }
-    }
   }
 
   return (
@@ -326,7 +356,7 @@ export function UploadTab() {
         <input
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,.zip,application/zip"
           className="hidden"
           ref={fileInputReference}
           onChange={handleFileChange}
@@ -351,12 +381,18 @@ export function UploadTab() {
             )}
           </div>
           <p className="text-sm text-zinc-500">Supports JPG, PNG, GIF, TIFF, WebP, and other common formats</p>
+          <ImportPackageButton onFiles={(files, handle) => { for (const file of files) void importPackage(file, handle as BrowserFileHandle | undefined); }} onError={setPackageError} />
+          {(packageError || companionImport.error) && <p role="status" className="mx-auto max-w-2xl text-sm text-amber-300">{packageError || companionImport.error}</p>}
+          {companionImport.prompt}
+          <p className="text-xs text-zinc-500">Originals over 100 MiB are flagged before upload; this warning does not block import.</p>
+          <PackageStatusPanel onReselect={async function handlePackageReselect() { setPackageError('Saved package access restored.'); }} />
         </div>
       </div>
 
       {/* Image preview grid */}
       {imageIds.length > 0 && (
         <div className="space-y-5">
+          <LargeOriginalNotice names={imageIds.flatMap((id) => images[id]?.largeOriginal ? [images[id].name] : [])} />
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-3 text-lg font-bold text-white">
               Selected Images

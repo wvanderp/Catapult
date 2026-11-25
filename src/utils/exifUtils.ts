@@ -1,4 +1,5 @@
 import exifr from "exifr";
+export { extractCompanionExif } from "./companionExif";
 
 /**
  * EXIF data extracted from an image, keyed by field name
@@ -13,10 +14,8 @@ export type ExifData = Record<string, unknown>;
  */
 export async function extractExifData(file: File): Promise<ExifData> {
   try {
-    // Convert File to ArrayBuffer for cross-environment compatibility (Node.js and browser)
+    // Keep ordinary uploads on the full-buffer parser used before companion imports.
     const arrayBuffer = await file.arrayBuffer();
-
-    // Parse all available metadata from the buffer
     const result = await exifr.parse(arrayBuffer, {
       // Include all metadata segments
       tiff: true,
